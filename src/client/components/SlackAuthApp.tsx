@@ -7,6 +7,7 @@ import styles from '../styles/SlackAuthApp.module.css'
 import ChannelSelector from './ChannelSelector'
 import ErrorMessage from './ErrorMessage'
 import TimePunchButtons from './TimePunchButtons'
+import TokenExpiryInfo from './TokenExpiryInfo'
 import UserProfile from './UserProfile'
 
 function SlackAuthApp() {
@@ -62,6 +63,9 @@ function SlackAuthApp() {
           <div className={styles.timeDisplay}>
             <div className={styles.currentTime}>{formattedTime}</div>
           </div>
+
+          {/* 開発環境でのテスト機能 */}
+          <TokenExpiryInfo userToken={null} />
 
           {authState.error && (
             <ErrorMessage 
@@ -120,6 +124,8 @@ function SlackAuthApp() {
             userProfile={userProfile} 
             isLoading={authState.isAuthenticated && !userProfile}
           />
+          
+          <TokenExpiryInfo userToken={tokenInfo?.userToken || null} />
           
           <p className={styles.description}>
             認証が完了しました！<br />

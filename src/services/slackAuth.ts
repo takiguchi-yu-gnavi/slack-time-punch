@@ -111,6 +111,19 @@ export class SlackAuthService {
         dataKeys: Object.keys(response.data || {})
       });
       
+      // auth.testの場合は有効期限情報も表示
+      if (endpoint === 'auth.test' && response.data.ok && response.data.expires_in) {
+        const expiresIn = response.data.expires_in;
+        const expirationDate = new Date(Date.now() + expiresIn * 1000);
+        console.log(`🕐 トークン有効期限情報:`, {
+          expires_in_seconds: expiresIn,
+          expires_in_hours: Math.round(expiresIn / 3600 * 100) / 100,
+          expires_in_days: Math.round(expiresIn / 86400 * 100) / 100,
+          expiration_date: expirationDate.toLocaleString('ja-JP'),
+          remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`
+        });
+      }
+      
       return response.data;
     } catch (error) {
       console.error(`Slack API Error for ${endpoint}:`, error);

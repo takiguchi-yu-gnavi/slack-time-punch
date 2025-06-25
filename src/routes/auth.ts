@@ -338,6 +338,36 @@ router.get('/user-info', async (req: Request, res: Response) => {
       }
     };
 
+    // トークンの有効期限情報を追加
+    if (userInfo.expires_in) {
+      // Token Rotationが有効な場合：有効期限あり
+      const expiresIn = userInfo.expires_in;
+      const expirationDate = new Date(Date.now() + expiresIn * 1000);
+      
+      responseData.token_info = {
+        expires_in_seconds: expiresIn,
+        expires_in_hours: Math.round(expiresIn / 3600 * 100) / 100,
+        expires_in_days: Math.round(expiresIn / 86400 * 100) / 100,
+        expiration_date: expirationDate.toISOString(),
+        expiration_date_local: expirationDate.toLocaleString('ja-JP'),
+        remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
+        is_permanent: false
+      };
+      
+      console.log('🕐 Token Rotationが有効：有効期限あり', {
+        expires_in_seconds: expiresIn,
+        expires_in_hours: Math.round(expiresIn / 3600 * 100) / 100,
+        expiration_date: expirationDate.toLocaleString('ja-JP')
+      });
+    } else {
+      // Token Rotationが無効な場合：永続的なトークン
+      responseData.token_info = {
+        is_permanent: true
+      };
+      
+      console.log('♾️ Token Rotationが無効：永続的なトークン（有効期限なし）');
+    }
+
     // プロフィール情報が取得できた場合は追加
     if (profileInfo.ok && profileInfo.profile) {
       responseData.user.profile = {
@@ -362,6 +392,94 @@ router.get('/user-info', async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : '不明なエラー'
     });
   }
+});
+
+/**
+ * 開発用：モックユーザー情報取得エンドポイント（トークン有効期限テスト用）
+ * GET /auth/mock-user-info?type=permanent|expiring
+ */
+router.get('/mock-user-info', async (req: Request, res: Response) => {
+  try {
+    const { type = 'permanent' } = req.query;
+
+    const baseUserData = {
+      success: true,
+      user: {
+        id: 'U1234567890',
+        name: 'test-user',
+        team_id: 'T1234567890',
+        team_name: 'テストチーム',
+        profile: {
+          display_name: 'テストユーザー',
+          real_name: 'テスト 太郎',
+          image_48: 'https://gravatar.com/avatar/placeholder?s=48&d=identicon',
+          image_192: 'https://gravatar.com/avatar/placeholder?s=192&d=identicon'
+        }
+      }
+    };
+
+    if (type === 'expiring') {
+      // Token Rotationが有効な場合のシミュレーション
+      const expiresIn = 43200; // 12時間
+      const expirationDate = new Date(Date.now() + expiresIn * 1000);
+      
+      (baseUserData as any).token_info = {
+        expires_in_seconds: expiresIn,
+        expires_in_hours: Math.round(expiresIn / 3600 * 100) / 100,
+        expires_in_days: Math.round(expiresIn / 86400 * 100) / 100,
+        expiration_date: expirationDate.toISOString(),
+        expiration_date_local: expirationDate.toLocaleString('ja-JP'),
+        remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
+        is_permanent: false
+      };
+      
+      console.log('🧪 モック: Token Rotationが有効な場合をシミュレーション');
+    } else {
+      // 永続的なトークンの場合
+      (baseUserData as any).token_info = {
+        is_permanent: true
+      };
+      
+      console.log('🧪 モック: 永続的なトークンをシミュレーション');
+    }
+
+    res.json(baseUserData);
+
+  } catch (error) {
+    console.error('モックユーザー情報取得エラー:', error);
+    res.status(500).json({ 
+      error: 'モックユーザー情報取得に失敗しました',
+      message: error instanceof Error ? error.message : '不明なエラー'
+    });
+  }
+});
+
+/**
+ * Token Rotation設定確認エンドポイント
+ * GET /auth/token-rotation-status
+ */
+router.get('/token-rotation-status', (req: Request, res: Response) => {
+  const tokenRotationInfo = {
+    app_name: process.env.SLACK_APP_NAME || 'Slack出退勤打刻アプリ',
+    token_rotation_info: {
+      note: 'Token Rotationが有効な場合、auth.testのレスポンスにexpires_inが含まれます',
+      how_to_check: '実際のSlack認証を行って/auth/user-infoエンドポイントでtoken_infoを確認してください',
+      enable_token_rotation: {
+        step1: 'https://api.slack.com/apps にアクセス',
+        step2: 'アプリを選択 → OAuth & Permissions',
+        step3: 'Token Rotation を有効にする',
+        warning: '一度有効にすると無効化できません'
+      },
+      current_implementation: {
+        supports_permanent_tokens: true,
+        supports_expiring_tokens: true,
+        auto_refresh: false,
+        note: '12時間ごとの自動更新は未実装（Token Rotationを有効にする場合は実装が必要）'
+      }
+    }
+  };
+
+  res.json(tokenRotationInfo);
 });
 
 export { router as authRoutes };

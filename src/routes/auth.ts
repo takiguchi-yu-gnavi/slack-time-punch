@@ -308,8 +308,10 @@ router.get('/user-info', async (req: Request, res: Response) => {
     }
 
     const slackAuth = getSlackAuthService();
+    
+    // 基本ユーザー情報取得
     const userInfo = await slackAuth.getUserInfo(token);
-
+    
     if (!userInfo.ok) {
       return res.status(400).json({ 
         error: 'ユーザー情報取得に失敗しました', 
@@ -317,7 +319,16 @@ router.get('/user-info', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    // 詳細プロフィール情報取得
+    const profileInfo = await slackAuth.getUserProfile(token);
+    
+    console.log('ユーザープロフィール取得:', {
+      ok: profileInfo.ok,
+      hasProfile: !!profileInfo.profile,
+      profileKeys: profileInfo.profile ? Object.keys(profileInfo.profile) : []
+    });
+
+    const responseData: any = {
       success: true,
       user: {
         id: userInfo.user_id,
@@ -325,7 +336,24 @@ router.get('/user-info', async (req: Request, res: Response) => {
         team_id: userInfo.team_id,
         team_name: userInfo.team
       }
-    });
+    };
+
+    // プロフィール情報が取得できた場合は追加
+    if (profileInfo.ok && profileInfo.profile) {
+      responseData.user.profile = {
+        display_name: profileInfo.profile.display_name || userInfo.user,
+        real_name: profileInfo.profile.real_name || userInfo.user,
+        image_24: profileInfo.profile.image_24,
+        image_32: profileInfo.profile.image_32,
+        image_48: profileInfo.profile.image_48,
+        image_72: profileInfo.profile.image_72,
+        image_192: profileInfo.profile.image_192,
+        image_512: profileInfo.profile.image_512,
+        image_original: profileInfo.profile.image_original
+      };
+    }
+
+    res.json(responseData);
 
   } catch (error) {
     console.error('ユーザー情報取得エラー:', error);

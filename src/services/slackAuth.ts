@@ -179,4 +179,18 @@ export class SlackAuthService {
   async getUserInfo(userToken: string): Promise<any> {
     return this.callSlackAPI(userToken, 'auth.test', 'GET');
   }
+
+  /**
+   * 詳細なユーザープロフィール情報を取得
+   * @param userToken ユーザーアクセストークン
+   * @param userId ユーザーID（省略時は認証ユーザー自身）
+   * @returns ユーザープロフィール情報
+   */
+  async getUserProfile(userToken: string, userId?: string): Promise<any> {
+    if (userId) {
+      return this.callSlackAPI(userToken, 'users.info', 'GET', { user: userId });
+    } else {
+      return this.callSlackAPI(userToken, 'users.profile.get', 'GET');
+    }
+  }
 }

@@ -7,6 +7,24 @@ export interface SlackTokenInfo {
   userId: string
 }
 
+export interface SlackUserProfile {
+  id: string
+  name: string
+  team_id: string
+  team_name: string
+  profile?: {
+    display_name: string
+    real_name: string
+    image_24?: string
+    image_32?: string
+    image_48?: string
+    image_72?: string
+    image_192?: string
+    image_512?: string
+    image_original?: string
+  }
+}
+
 interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
@@ -16,6 +34,7 @@ interface AuthState {
 interface UseSlackAuthReturn {
   authState: AuthState
   tokenInfo: SlackTokenInfo | null
+  userProfile: SlackUserProfile | null
   login: () => void
   logout: () => void
   setAuthError: (error: string | null) => void
@@ -29,6 +48,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     error: null
   })
   const [tokenInfo, setTokenInfo] = useState<SlackTokenInfo | null>(null)
+  const [userProfile, setUserProfile] = useState<SlackUserProfile | null>(null)
 
   // ローカルストレージのテスト関数
   const testLocalStorage = useCallback(() => {
@@ -165,8 +185,38 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   const logout = useCallback(() => {
     localStorage.removeItem('slackTokenInfo')
     setTokenInfo(null)
+    setUserProfile(null)
     setAuthState({ isAuthenticated: false, isLoading: false, error: null })
   }, [])
+
+  // ユーザー情報を取得
+  const fetchUserProfile = useCallback(async (userToken: string) => {
+    try {
+      console.log('🔍 ユーザープロフィール情報を取得中...')
+      const response = await fetch(`http://localhost:3000/auth/user-info?token=${userToken}`)
+      const data = await response.json()
+      
+      if (data.success && data.user) {
+        console.log('✅ ユーザー情報取得成功:', {
+          name: data.user.name,
+          hasProfile: !!data.user.profile,
+          hasImage: !!data.user.profile?.image_48
+        })
+        setUserProfile(data.user)
+      } else {
+        console.error('❌ ユーザー情報取得失敗:', data.error)
+      }
+    } catch (error) {
+      console.error('❌ ユーザー情報取得エラー:', error)
+    }
+  }, [])
+
+  // 認証完了時にユーザー情報も取得
+  useEffect(() => {
+    if (authState.isAuthenticated && tokenInfo?.userToken && !userProfile) {
+      fetchUserProfile(tokenInfo.userToken)
+    }
+  }, [authState.isAuthenticated, tokenInfo?.userToken, userProfile, fetchUserProfile])
 
   const setAuthError = useCallback((error: string | null) => {
     setAuthState(prev => ({ ...prev, error }))
@@ -179,6 +229,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   return {
     authState,
     tokenInfo,
+    userProfile,
     login,
     logout,
     setAuthError,

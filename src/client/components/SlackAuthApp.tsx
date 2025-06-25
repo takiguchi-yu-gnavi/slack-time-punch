@@ -7,9 +7,10 @@ import styles from '../styles/SlackAuthApp.module.css'
 import ChannelSelector from './ChannelSelector'
 import ErrorMessage from './ErrorMessage'
 import TimePunchButtons from './TimePunchButtons'
+import UserProfile from './UserProfile'
 
 function SlackAuthApp() {
-  const { authState, tokenInfo, login, logout, setAuthError, setAuthLoading } = useSlackAuth()
+  const { authState, tokenInfo, userProfile, login, logout, setAuthError, setAuthLoading } = useSlackAuth()
   const { 
     channels, 
     selectedChannel, 
@@ -115,6 +116,11 @@ function SlackAuthApp() {
         </>
       ) : (
         <>
+          <UserProfile 
+            userProfile={userProfile} 
+            isLoading={authState.isAuthenticated && !userProfile}
+          />
+          
           <p className={styles.description}>
             認証が完了しました！<br />
             チャンネルを選択して出退勤の打刻を行えます。

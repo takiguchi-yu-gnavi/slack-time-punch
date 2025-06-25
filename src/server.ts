@@ -21,8 +21,13 @@ class SlackOAuthApp {
   private initializeMiddleware(): void {
     // CORS設定
     this.app.use(cors({
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-      credentials: true
+      origin: [
+        'http://localhost:5173', // Vite開発サーバー
+        'http://localhost:3000'  // 本番用
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     }));
 
     // JSONボディパーサー

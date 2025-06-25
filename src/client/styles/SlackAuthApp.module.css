@@ -1,0 +1,357 @@
+.container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.description {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.timeDisplay {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 15px;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.currentTime {
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.error {
+  background: #ffe6e6;
+  color: #d63031;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  border: 1px solid #fab1a0;
+}
+
+.buttonContainer {
+  margin-bottom: 3rem;
+}
+
+.slackButton {
+  background: linear-gradient(135deg, #4267B2, #5A6ACF);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(66, 103, 178, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.slackButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(66, 103, 178, 0.4);
+}
+
+.slackButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.slackIcon {
+  font-size: 1.2rem;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.features {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.feature:hover {
+  transform: translateY(-2px);
+}
+
+.featureIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.featureText h3 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.featureText p {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.footer {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.footer p {
+  color: #95a5a6;
+  font-size: 0.9rem;
+}
+
+.punchButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.punchButton {
+  background: linear-gradient(135deg, #4267B2, #5A6ACF);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(66, 103, 178, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 150px;
+  justify-content: center;
+}
+
+.punchInButton {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+}
+
+.punchInButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(0, 184, 148, 0.4);
+}
+
+.punchOutButton {
+  background: linear-gradient(135deg, #e17055, #d63031);
+}
+
+.punchOutButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(214, 48, 49, 0.4);
+}
+
+.punchButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.logoutContainer {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.logoutButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logoutButton:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* チャンネル選択エリア */
+.channelSelector {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.channelLabel {
+  display: block;
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: left;
+  font-size: 1.1rem;
+}
+
+.channelSelect {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 2px solid #dee2e6;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: white;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.channelSelect:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.channelSelect:hover {
+  border-color: #adb5bd;
+}
+
+.loadingChannels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.channelError {
+  background: #ffe6e6;
+  color: #d63031;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.retryButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.retryButton:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* ボタンの無効化スタイル */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.disabled:hover {
+  transform: none !important;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem;
+    margin: 1rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .description {
+    font-size: 1rem;
+  }
+  
+  .currentTime {
+    font-size: 1.2rem;
+  }
+  
+  .slackButton {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .channelSelector {
+    padding: 1rem;
+  }
+  
+  .channelLabel {
+    font-size: 1rem;
+  }
+  
+  .channelSelect {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+  
+  .channelError {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+}

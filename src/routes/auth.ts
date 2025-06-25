@@ -5,8 +5,16 @@ import { stateManager } from '../utils/stateManager';
 
 const router = express.Router();
 
-// CORS設定
-router.use(cors());
+// CORS設定（ルーター固有）
+router.use(cors({
+  origin: [
+    'http://localhost:5173', // Vite開発サーバー
+    'http://localhost:3000'  // 本番用
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Slack認証サービスのインスタンスを取得する関数
 function getSlackAuthService(): SlackAuthService {
@@ -77,26 +85,79 @@ router.get('/slack/callback', async (req: Request, res: Response) => {
       userScopes: tokenResponse.authed_user.scope
     });
     
-    // 成功時、トークン情報を含むHTMLページを返す（実際のアプリではセッションに保存）
+    // 成功時、トークン情報をURLパラメータとして安全に渡す
+    const redirectUrl = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5173';
+    
+    // トークン情報をBase64エンコードして安全に渡す
+    const tokenData = {
+      userToken: tokenResponse.authed_user.access_token || '',
+      botToken: tokenResponse.access_token || '',
+      teamId: tokenResponse.team?.id || '',
+      userId: tokenResponse.authed_user?.id || ''
+    };
+    
+    // Base64エンコード（URLセーフ）
+    const encodedTokenData = Buffer.from(JSON.stringify(tokenData)).toString('base64url');
+    
+    console.log('🔐 エンコードしたトークン情報の長さ:', encodedTokenData.length);
+    
     const successHtml = `
     <!DOCTYPE html>
     <html>
     <head>
         <title>認証完了</title>
+        <meta charset="UTF-8">
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+          }
+          .container {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+          }
+          .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 1rem;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
         <script>
-          // トークン情報をローカルストレージに保存（実際のアプリではセッションを使用）
-          localStorage.setItem('slackTokenInfo', JSON.stringify({
-            userToken: '${tokenResponse.authed_user.access_token || ''}',
-            botToken: '${tokenResponse.access_token}',
-            teamId: '${tokenResponse.team.id}',
-            userId: '${tokenResponse.authed_user.id}'
-          }));
-          // メインページにリダイレクト
-          window.location.href = '/';
+          console.log('🎉 Slack認証が完了しました');
+          console.log('🚀 Reactアプリにリダイレクトします...');
+          
+          // Reactアプリにトークン情報付きでリダイレクト
+          const redirectUrl = '${redirectUrl}?auth=success&token=${encodedTokenData}';
+          console.log('リダイレクト先:', redirectUrl);
+          
+          // 短い遅延の後にリダイレクト（ユーザーに成功メッセージを表示するため）
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1500);
         </script>
     </head>
     <body>
-        <p>認証処理中...</p>
+        <div class="container">
+          <div class="spinner"></div>
+          <h2>🎉 認証完了！</h2>
+          <p>Slackアプリにリダイレクトしています...</p>
+        </div>
     </body>
     </html>`;
     

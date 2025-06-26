@@ -1,12 +1,45 @@
 import { DEFAULT_CLIENT_PORT, DEFAULT_SERVER_PORT } from '@slack-time-punch/shared';
+import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { Application } from 'express';
+import https from 'https';
 import path from 'path';
 import { authRoutes } from './routes/auth';
 
 // 環境変数の読み込み（ルートディレクトリの.envファイルを指定）
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+// SSL/TLS設定の初期化とログ出力
+const initializeSSLSettings = () => {
+  console.log('🔒 SSL/TLS設定の初期化:', {
+    NODE_ENV: process.env.NODE_ENV,
+    DOCKER: process.env.DOCKER,
+    NODE_TLS_REJECT_UNAUTHORIZED: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
+    ALLOW_SELF_SIGNED_CERTS: process.env.ALLOW_SELF_SIGNED_CERTS
+  });
+
+  // 開発環境でSSL証明書エラーを回避するためのaxios設定
+  const shouldDisableSSLVerify = process.env.NODE_ENV !== 'production' || 
+                                 process.env.DISABLE_SSL_VERIFY === 'true' ||
+                                 process.env.DOCKER === 'true' ||
+                                 process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+
+  if (shouldDisableSSLVerify) {
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+      keepAlive: true,
+      timeout: 30000
+    });
+    axios.defaults.httpsAgent = httpsAgent;
+    console.log('🔧 SSL証明書検証を無効化しました');
+  } else {
+    console.log('🔒 SSL証明書検証は有効です');
+  }
+};
+
+// SSL設定を初期化
+initializeSSLSettings();
 
 class SlackOAuthApp {
   private app: Application;
@@ -44,9 +77,14 @@ class SlackOAuthApp {
     // 認証関連のルート
     this.app.use('/auth', authRoutes);
 
-    // ルートページ
+    // ルートページ - クライアントアプリケーションにリダイレクト（クエリパラメータを引き継ぎ）
     this.app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, '../public/index.html'));
+      const clientUrl = `http://localhost:${DEFAULT_CLIENT_PORT}`;
+      const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+      const redirectUrl = `${clientUrl}${queryString}`;
+      
+      console.log(`🔗 クライアントにリダイレクト: ${redirectUrl}`);
+      res.redirect(redirectUrl);
     });
 
     // ヘルスチェック
@@ -54,7 +92,8 @@ class SlackOAuthApp {
       res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        clientUrl: `http://localhost:${DEFAULT_CLIENT_PORT}`
       });
     });
 

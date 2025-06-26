@@ -1,5 +1,6 @@
 import { SlackErrorResponse, SlackOAuthResponse } from '@slack-time-punch/shared';
 import axios from 'axios';
+import https from 'https';
 
 export class SlackAuthService {
   private readonly clientId: string;
@@ -7,6 +8,7 @@ export class SlackAuthService {
   private readonly redirectUri: string;
   private readonly defaultScopes: string;
   private readonly defaultUserScopes: string;
+  private readonly httpsAgent: https.Agent;
 
   constructor() {
     this.clientId = process.env.SLACK_CLIENT_ID || '';
@@ -14,6 +16,27 @@ export class SlackAuthService {
     this.redirectUri = process.env.REDIRECT_URI || '';
     this.defaultScopes = process.env.SLACK_SCOPES || 'commands,incoming-webhook,chat:write';
     this.defaultUserScopes = process.env.SLACK_USER_SCOPES || 'channels:read,chat:write,identify';
+
+    // SSL証明書検証の設定
+    // ALLOW_SELF_SIGNED_CERTS環境変数またはDOCKER環境での証明書問題に対応
+    const allowSelfSignedCerts = process.env.ALLOW_SELF_SIGNED_CERTS === 'true' || 
+                                 process.env.DOCKER === 'true' ||
+                                 process.env.NODE_ENV !== 'production';
+    
+    this.httpsAgent = new https.Agent({
+      rejectUnauthorized: !allowSelfSignedCerts,
+      // より詳細な設定でSlack APIとの通信を安定化
+      keepAlive: true,
+      timeout: 30000,
+      maxSockets: 10
+    });
+
+    console.log('🔒 HTTPS Agent設定:', {
+      rejectUnauthorized: !allowSelfSignedCerts,
+      NODE_ENV: process.env.NODE_ENV,
+      DOCKER: process.env.DOCKER,
+      ALLOW_SELF_SIGNED_CERTS: process.env.ALLOW_SELF_SIGNED_CERTS
+    });
 
     if (!this.clientId || !this.clientSecret || !this.redirectUri) {
       throw new Error('Slack OAuth credentials are not properly configured');
@@ -50,6 +73,12 @@ export class SlackAuthService {
    */
   async exchangeCodeForToken(code: string): Promise<SlackOAuthResponse> {
     try {
+      console.log('🔄 Slack OAuth token exchange開始:', {
+        hasCode: !!code,
+        codeLength: code?.length,
+        httpsAgentRejectUnauthorized: this.httpsAgent.options.rejectUnauthorized
+      });
+
       const response = await axios.post('https://slack.com/api/oauth.v2.access', {
         client_id: this.clientId,
         client_secret: this.clientSecret,
@@ -58,9 +87,13 @@ export class SlackAuthService {
       }, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        httpsAgent: this.httpsAgent,
+        timeout: 30000 // 30秒のタイムアウト
       });
 
+      console.log('✅ Slack OAuth token exchange成功');
+      
       const data = response.data as SlackOAuthResponse | SlackErrorResponse;
       
       if (!data.ok) {
@@ -70,8 +103,33 @@ export class SlackAuthService {
       return data as SlackOAuthResponse;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        const errorDetails = {
+          message: error.message,
+          code: error.code,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            rejectUnauthorized: this.httpsAgent.options.rejectUnauthorized
+          },
+          response: error.response ? {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data
+          } : null
+        };
+        
+        console.error('❌ Slack OAuth token exchange failed:', errorDetails);
+        
+        // 証明書関連のエラーの場合、より詳細な情報を提供
+        if (error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' || 
+            error.code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+            error.message.includes('certificate')) {
+          throw new Error(`SSL Certificate error: ${error.message}. Consider setting ALLOW_SELF_SIGNED_CERTS=true or updating CA certificates.`);
+        }
+        
         throw new Error(`HTTP request failed: ${error.message}`);
       }
+      console.error('❌ Unexpected error in OAuth token exchange:', error);
       throw error;
     }
   }
@@ -101,7 +159,8 @@ export class SlackAuthService {
           'Content-Type': method === 'POST' ? 'application/json' : 'application/x-www-form-urlencoded'
         },
         data: method === 'POST' ? data : undefined,
-        params: method === 'GET' ? data : undefined
+        params: method === 'GET' ? data : undefined,
+        httpsAgent: this.httpsAgent
       };
 
       const response = await axios(config);
@@ -153,7 +212,8 @@ export class SlackAuthService {
         headers: {
           'Authorization': `Bearer ${userToken}`,
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        httpsAgent: this.httpsAgent
       });
 
       console.log('チャンネル取得API直接呼び出し結果:', {

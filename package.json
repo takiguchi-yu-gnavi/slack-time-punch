@@ -19,7 +19,12 @@
     "install:all": "npm install && npm install --workspace=packages/server && npm install --workspace=packages/client",
     "check:server": "cd packages/server && npm run build",
     "check:client": "cd packages/client && npm run build",
-    "debug": "concurrently --kill-others \"npm run dev:server\" \"sleep 3 && npm run dev:client\""
+    "debug": "concurrently --kill-others \"npm run dev:server\" \"sleep 3 && npm run dev:client\"",
+    "docker:server:build": "docker-compose -f docker-compose.server.yml build",
+    "docker:server:up": "docker-compose -f docker-compose.server.yml up -d",
+    "docker:server:down": "docker-compose -f docker-compose.server.yml down",
+    "docker:server:logs": "docker-compose -f docker-compose.server.yml logs -f",
+    "docker:server:restart": "npm run docker:server:down && npm run docker:server:build && npm run docker:server:up"
   },
   "keywords": ["slack", "oauth", "typescript", "tauri", "desktop"],
   "author": "",

@@ -163,8 +163,19 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
   const isExpiringSoon = expiryInfo.expires_in_hours < 24
   const isExpiringVerySOON = expiryInfo.expires_in_hours < 1
 
+  // コンテナのクラス名を決定
+  const getContainerClassName = () => {
+    const classes = [styles.container]
+    if (isExpiringVerySOON) {
+      classes.push(styles.critical)
+    } else if (isExpiringSoon) {
+      classes.push(styles.warning)
+    }
+    return classes.filter(Boolean).join(' ')
+  }
+
   return (
-    <div className={`${styles.container} ${isExpiringVerySOON ? styles.critical : isExpiringSoon ? styles.warning : ''}`}>
+    <div className={getContainerClassName()}>
       <div className={styles.header}>
         <span className={styles.icon}>
           {isExpiringVerySOON ? '🚨' : isExpiringSoon ? '⚠️' : '🕐'}

@@ -1,6 +1,21 @@
 # Slack 出退勤打刻アプリ
 
-TypeScriptで実装されたSlack連携出退勤打刻システムです。このアプリケーションを使用して、Slackチャンネルに出退勤メッセージを簡単に投稿できます。
+TypeScriptで実装されたSlack連携出退勤打刻システムです。サーバー/クライアント分離構成で、将来的なTauriデスクトップアプリ化に対応しています。
+
+## 🏗️ アーキテクチャ
+
+### モノレポ構成（Server/Client分離）
+
+```
+packages/
+├── shared/     # 共有型定義・ユーティリティ
+├── server/     # Express.js APIサーバー
+└── client/     # React.js フロントエンド (Tauri-ready)
+```
+
+- **完全分離**: サーバーとクライアントが独立
+- **型安全性**: 共有型定義で一貫性を保証
+- **Tauri対応**: クライアントアプリのデスクトップ化準備完了
 
 ## 🚀 機能
 
@@ -67,6 +82,41 @@ npm run dev
 npm run build
 npm start
 ```
+
+## 🚀 クイックスタート
+
+### 1. 依存関係のインストール
+```bash
+npm install
+```
+
+### 2. 環境設定
+```bash
+cp .env.example .env
+# .envファイルを編集してSlackアプリ情報を設定
+```
+
+### 3. アプリケーション起動
+
+#### 開発モード（推奨）
+```bash
+# サーバー・クライアント同時起動
+npm run dev
+```
+
+#### 個別起動
+```bash
+# サーバーのみ（API: http://localhost:3000）
+npm run dev:server
+
+# クライアントのみ（UI: http://localhost:5173）
+npm run dev:client
+```
+
+### 4. アクセス
+- **フロントエンド**: http://localhost:5173
+- **API サーバー**: http://localhost:3000
+- **Slack認証**: http://localhost:3000/auth/slack
 
 ## 📡 API エンドポイント
 

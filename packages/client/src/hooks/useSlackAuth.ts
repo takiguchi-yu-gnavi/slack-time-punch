@@ -1,5 +1,6 @@
 import { AuthTokenInfo } from '@slack-time-punch/shared'
 import { useCallback, useEffect, useState } from 'react'
+import { config } from '../config'
 
 // クライアント専用の型定義
 export interface SlackUserProfile {
@@ -174,7 +175,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
     
     // OAuth認証は直接リダイレクトで行う
-    window.location.href = 'http://localhost:3000/auth/slack'
+    window.location.href = `${config.SERVER_URL}/auth/slack`
   }, [])
 
   const logout = useCallback(() => {
@@ -188,7 +189,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   const fetchUserProfile = useCallback(async (userToken: string) => {
     try {
       console.log('🔍 ユーザープロフィール情報を取得中...')
-      const response = await fetch(`http://localhost:3000/auth/user-info?token=${userToken}`)
+      const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`)
       const data = await response.json()
       
       if (data.success && data.user) {

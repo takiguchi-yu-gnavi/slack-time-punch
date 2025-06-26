@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { config } from '../config'
 
 export interface SlackChannel {
   id: string
@@ -36,7 +37,7 @@ export const useSlackChannels = (): UseSlackChannelsReturn => {
     setError(null)
     
     try {
-      const response = await fetch(`http://localhost:3000/auth/channels?token=${userToken}`)
+      const response = await fetch(`${config.SERVER_URL}/auth/channels?token=${userToken}`)
       const data = await response.json() as ChannelsApiResponse
       
       if (data.success && data.channels) {

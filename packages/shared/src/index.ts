@@ -17,3 +17,15 @@ export const API_ENDPOINTS = {
 
 export const DEFAULT_SERVER_PORT = 3000;
 export const DEFAULT_CLIENT_PORT = 5173;
+
+// 環境変数から設定を取得するヘルパー関数
+export const getHostConfig = () => {
+  // 完全なURLを直接使用
+  const CLIENT_URL = process.env.CLIENT_URL || `http://localhost:${DEFAULT_CLIENT_PORT}`;
+  const SERVER_URL = process.env.SERVER_URL || `http://localhost:${DEFAULT_SERVER_PORT}`;
+  
+  return {
+    CLIENT_URL,
+    SERVER_URL
+  };
+};

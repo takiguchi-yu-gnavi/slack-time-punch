@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { config } from '../config'
 
 interface PostMessageApiResponse {
   success?: boolean
@@ -26,7 +27,7 @@ export const useTimePunch = (
     const message = type === 'in' ? '🟢 おはようございます。業務開始します。' : '🔴 お疲れさまです。業務終了します。'
     
     try {
-      const response = await fetch('http://localhost:3000/auth/post-message', {
+      const response = await fetch(`${config.SERVER_URL}/auth/post-message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

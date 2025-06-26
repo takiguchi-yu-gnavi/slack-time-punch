@@ -1,4 +1,4 @@
-import { DEFAULT_CLIENT_PORT, DEFAULT_SERVER_PORT } from '@slack-time-punch/shared';
+import { getHostConfig } from '@slack-time-punch/shared';
 import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -9,6 +9,9 @@ import { authRoutes } from './routes/auth';
 
 // 環境変数の読み込み（ルートディレクトリの.envファイルを指定）
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+// ホスト設定を取得
+const hostConfig = getHostConfig();
 
 // SSL/TLS設定の初期化とログ出力
 const initializeSSLSettings = () => {
@@ -47,7 +50,7 @@ class SlackOAuthApp {
 
   constructor() {
     this.app = express();
-    this.port = parseInt(process.env.PORT || DEFAULT_SERVER_PORT.toString());
+    this.port = parseInt(process.env.PORT || '3000');
     this.initializeMiddleware();
     this.initializeRoutes();
   }
@@ -56,9 +59,9 @@ class SlackOAuthApp {
     // CORS設定 - クライアントアプリケーション分離対応
     this.app.use(cors({
       origin: [
-        `http://localhost:${DEFAULT_CLIENT_PORT}`, // クライアント開発サーバー
+        hostConfig.CLIENT_URL, // メインクライアント
         'http://localhost:5174', // 代替ポート
-        'http://localhost:3000'  // 本番用（将来のホスティング）
+        hostConfig.SERVER_URL  // 本番用（将来のホスティング）
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -79,7 +82,7 @@ class SlackOAuthApp {
 
     // ルートページ - クライアントアプリケーションにリダイレクト（クエリパラメータを引き継ぎ）
     this.app.get('/', (req, res) => {
-      const clientUrl = `http://localhost:${DEFAULT_CLIENT_PORT}`;
+      const clientUrl = hostConfig.CLIENT_URL;
       const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
       const redirectUrl = `${clientUrl}${queryString}`;
       
@@ -93,7 +96,8 @@ class SlackOAuthApp {
         status: 'OK', 
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        clientUrl: `http://localhost:${DEFAULT_CLIENT_PORT}`
+        clientUrl: hostConfig.CLIENT_URL,
+        serverUrl: hostConfig.SERVER_URL
       });
     });
 
@@ -106,9 +110,9 @@ class SlackOAuthApp {
   public start(): void {
     this.app.listen(this.port, () => {
       console.log(`🚀 Slack Time Punch API Server が起動しました`);
-      console.log(`📍 サーバーURL: http://localhost:${this.port}`);
-      console.log(`🔑 Slack認証: http://localhost:${this.port}/auth/slack`);
-      console.log(`👥 クライアントURL: http://localhost:${DEFAULT_CLIENT_PORT}`);
+      console.log(`📍 サーバーURL: ${hostConfig.SERVER_URL}`);
+      console.log(`🔑 Slack認証: ${hostConfig.SERVER_URL}/auth/slack`);
+      console.log(`👥 クライアントURL: ${hostConfig.CLIENT_URL}`);
       console.log(`🔧 環境: ${process.env.NODE_ENV || 'development'}`);
     });
   }

@@ -5,11 +5,15 @@ import { stateManager } from '../utils/stateManager';
 
 const router = express.Router();
 
+// 環境変数から設定を取得
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+
 // CORS設定（ルーター固有）
 router.use(cors({
   origin: [
-    'http://localhost:5173', // Vite開発サーバー
-    'http://localhost:3000'  // 本番用
+    CLIENT_URL,
+    SERVER_URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -86,7 +90,7 @@ router.get('/slack/callback', async (req: Request, res: Response) => {
     });
     
     // 成功時、トークン情報をURLパラメータとして安全に渡す
-    const redirectUrl = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5173';
+    const redirectUrl = process.env.NODE_ENV === 'production' ? '/' : CLIENT_URL;
     
     // トークン情報をBase64エンコードして安全に渡す
     const tokenData = {

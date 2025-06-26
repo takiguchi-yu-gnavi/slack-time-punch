@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { config } from '../config'
 import styles from '../styles/TokenExpiryInfo.module.css'
 
 interface TokenExpiryInfoProps {
@@ -19,7 +20,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
   const [expiryInfo, setExpiryInfo] = useState<TokenExpiryData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [testMode, setTestMode] = useState<'permanent' | 'expiring' | null>(null)
+  const [, setTestMode] = useState<'permanent' | 'expiring' | null>(null)
 
   useEffect(() => {
     if (!userToken) {
@@ -32,7 +33,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
       setError(null)
       
       try {
-        const response = await fetch(`http://localhost:3000/auth/user-info?token=${userToken}`)
+        const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`)
         const data = await response.json()
         
         if (data.success && data.token_info) {
@@ -58,7 +59,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
     setError(null)
     
     try {
-      const response = await fetch('http://localhost:3000/auth/mock-user-info?type=permanent')
+      const response = await fetch(`${config.SERVER_URL}/auth/mock-user-info?type=permanent`)
       const data = await response.json()
       
       if (data.success && data.token_info) {
@@ -78,7 +79,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
     setError(null)
     
     try {
-      const response = await fetch('http://localhost:3000/auth/mock-user-info?type=expiring')
+      const response = await fetch(`${config.SERVER_URL}/auth/mock-user-info?type=expiring`)
       const data = await response.json()
       
       if (data.success && data.token_info) {

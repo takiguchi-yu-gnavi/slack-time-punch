@@ -12,11 +12,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_SERVER_URL || 'http://localhost:3000',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_SERVER_URL || 'http://localhost:3000',
         changeOrigin: true,
       },
     },

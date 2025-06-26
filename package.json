@@ -1,7 +1,7 @@
 {
   "name": "slack-time-punch-workspace",
   "version": "1.0.0",
-  "description": "Slack Time Punch App - Monorepo with Server/Client separation",
+  "description": "Slack Time Punch App - TypeScript Monorepo with Server/Client separation, Docker support, and Tauri-ready architecture",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -26,7 +26,7 @@
     "docker:server:logs": "docker-compose -f docker-compose.server.yml logs -f",
     "docker:server:restart": "npm run docker:server:down && npm run docker:server:build && npm run docker:server:up"
   },
-  "keywords": ["slack", "oauth", "typescript", "tauri", "desktop"],
+  "keywords": ["slack", "oauth", "typescript", "tauri", "desktop", "react", "vite", "express", "docker", "monorepo"],
   "author": "",
   "license": "ISC",
   "devDependencies": {

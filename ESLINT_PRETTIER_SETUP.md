@@ -254,6 +254,41 @@ npm run format:check
 
 ESLintプラグインが最新のTypeScriptバージョンに対応していない場合の警告です。通常は問題なく動作します。
 
+## Git Hooks（simple-git-hooks）
+
+### 概要
+
+commit時に自動的にlintチェックとフォーマットチェックが実行されます。
+
+### 設定内容
+
+- **pre-commit**: `npm run lint && npm run format:check`を実行
+- エラーがある場合、commitが中止されます
+
+### Hook無効化方法
+
+一時的に無効化したい場合：
+
+```bash
+# 環境変数で無効化
+SKIP_SIMPLE_GIT_HOOKS=1 git commit -m "message"
+
+# または --no-verifyオプション
+git commit --no-verify -m "message"
+```
+
+### Hook再インストール
+
+```bash
+npx simple-git-hooks
+```
+
+### トラブルシューティング
+
+1. **権限エラー**: `.git/hooks/pre-commit`の実行権限を確認
+2. **Hook未実行**: `npm run postinstall`を手動実行
+3. **無限ループ**: pre-commitスクリプトでgit operationを避ける
+
 ## カスタマイズ
 
 プロジェクトの要件に応じて以下をカスタマイズできます：

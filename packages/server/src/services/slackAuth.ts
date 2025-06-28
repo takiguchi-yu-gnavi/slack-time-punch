@@ -1,3 +1,5 @@
+import https from 'https';
+
 import {
   HttpRequestData,
   SlackApiResponse,
@@ -8,7 +10,6 @@ import {
   SlackUser,
 } from '@slack-time-punch/shared';
 import axios from 'axios';
-import https from 'https';
 
 export class SlackAuthService {
   private readonly clientId: string;
@@ -19,11 +20,11 @@ export class SlackAuthService {
   private readonly httpsAgent: https.Agent;
 
   constructor() {
-    this.clientId = process.env.SLACK_CLIENT_ID || '';
-    this.clientSecret = process.env.SLACK_CLIENT_SECRET || '';
-    this.redirectUri = process.env.REDIRECT_URI || '';
-    this.defaultScopes = process.env.SLACK_SCOPES || 'commands,incoming-webhook,chat:write';
-    this.defaultUserScopes = process.env.SLACK_USER_SCOPES || 'channels:read,chat:write,identify';
+    this.clientId = process.env.SLACK_CLIENT_ID ?? '';
+    this.clientSecret = process.env.SLACK_CLIENT_SECRET ?? '';
+    this.redirectUri = process.env.REDIRECT_URI ?? '';
+    this.defaultScopes = process.env.SLACK_SCOPES ?? 'commands,incoming-webhook,chat:write';
+    this.defaultUserScopes = process.env.SLACK_USER_SCOPES ?? 'channels:read,chat:write,identify';
 
     // SSL証明書検証の設定
     // ALLOW_SELF_SIGNED_CERTS環境変数またはDOCKER環境での証明書問題に対応
@@ -60,8 +61,8 @@ export class SlackAuthService {
    * @returns OAuth認証URL
    */
   generateAuthUrl(state: string, scopes?: string, userScopes?: string): string {
-    const requestedScopes = scopes || this.defaultScopes;
-    const requestedUserScopes = userScopes || this.defaultUserScopes;
+    const requestedScopes = scopes ?? this.defaultScopes;
+    const requestedUserScopes = userScopes ?? this.defaultUserScopes;
 
     const params = new URLSearchParams({
       client_id: this.clientId,
@@ -113,7 +114,7 @@ export class SlackAuthService {
         throw new Error(`Slack OAuth error: ${(data as SlackErrorResponse).error}`);
       }
 
-      return data as SlackOAuthResponse;
+      return data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const errorDetails = {
@@ -128,7 +129,7 @@ export class SlackAuthService {
             ? {
                 status: error.response.status,
                 statusText: error.response.statusText,
-                data: error.response.data,
+                data: error.response.data as Record<string, unknown>,
               }
             : null,
         };
@@ -175,8 +176,7 @@ export class SlackAuthService {
         url: `https://slack.com/api/${endpoint}`,
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type':
-            method === 'POST' ? 'application/json' : 'application/x-www-form-urlencoded',
+          'Content-Type': method === 'POST' ? 'application/json' : 'application/x-www-form-urlencoded',
         },
         data: method === 'POST' ? data : undefined,
         params: method === 'GET' ? data : undefined,
@@ -184,15 +184,16 @@ export class SlackAuthService {
       };
 
       const response = await axios(config);
+      const responseData = response.data as SlackApiResponse<T>;
       console.log(`Slack API Response: ${endpoint}`, {
-        ok: response.data.ok,
-        error: response.data.error,
-        dataKeys: Object.keys(response.data || {}),
+        ok: responseData.ok,
+        error: responseData.error,
+        dataKeys: Object.keys(responseData ?? {}),
       });
 
       // auth.testの場合は有効期限情報も表示
-      if (endpoint === 'auth.test' && response.data.ok && response.data.expires_in) {
-        const expiresIn = response.data.expires_in;
+      if (endpoint === 'auth.test' && responseData.ok && 'expires_in' in responseData) {
+        const expiresIn = responseData.expires_in as number;
         const expirationDate = new Date(Date.now() + expiresIn * 1000);
         console.log(`🕐 トークン有効期限情報:`, {
           expires_in_seconds: expiresIn,
@@ -203,11 +204,12 @@ export class SlackAuthService {
         });
       }
 
-      return response.data;
+      return responseData;
     } catch (error) {
       console.error(`Slack API Error for ${endpoint}:`, error);
       if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.error || error.message;
+        const responseData = error.response?.data as { error?: string } | undefined;
+        const errorMessage = responseData?.error ?? error.message;
         throw new Error(`Slack API call failed: ${errorMessage}`);
       }
       throw error;
@@ -228,24 +230,24 @@ export class SlackAuthService {
         limit: '1000',
       });
 
-      const response = await axios.get(
-        `https://slack.com/api/users.conversations?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          httpsAgent: this.httpsAgent,
-        }
-      );
-
-      console.log('チャンネル取得API直接呼び出し結果:', {
-        ok: response.data.ok,
-        error: response.data.error,
-        channelCount: response.data.channels?.length,
+      const response = await axios.get(`https://slack.com/api/users.conversations?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        httpsAgent: this.httpsAgent,
       });
 
-      return response.data;
+      const responseData = response.data as SlackApiResponse<{ channels: SlackChannel[] }> & {
+        channels?: SlackChannel[];
+      };
+      console.log('チャンネル取得API直接呼び出し結果:', {
+        ok: responseData.ok,
+        error: responseData.error,
+        channelCount: responseData.channels?.length ?? responseData.data?.channels?.length,
+      });
+
+      return responseData;
     } catch (error) {
       console.error('チャンネル取得API直接呼び出しエラー:', error);
       throw error;
@@ -259,11 +261,7 @@ export class SlackAuthService {
    * @param text メッセージテキスト
    * @returns 投稿結果
    */
-  async postMessageAsUser(
-    userToken: string,
-    channelId: string,
-    text: string
-  ): Promise<SlackApiResponse<SlackMessage>> {
+  async postMessageAsUser(userToken: string, channelId: string, text: string): Promise<SlackApiResponse<SlackMessage>> {
     return this.callSlackAPI(userToken, 'chat.postMessage', 'POST', {
       channel: channelId,
       text,
@@ -277,11 +275,7 @@ export class SlackAuthService {
    * @param text メッセージテキスト
    * @returns 投稿結果
    */
-  async postMessageAsBot(
-    botToken: string,
-    channelId: string,
-    text: string
-  ): Promise<SlackApiResponse<SlackMessage>> {
+  async postMessageAsBot(botToken: string, channelId: string, text: string): Promise<SlackApiResponse<SlackMessage>> {
     return this.callSlackAPI(botToken, 'chat.postMessage', 'POST', {
       channel: channelId,
       text,

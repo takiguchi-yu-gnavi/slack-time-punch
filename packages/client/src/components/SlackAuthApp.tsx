@@ -1,18 +1,19 @@
 import { useEffect } from 'react';
+
 import { useCurrentTime } from '../hooks/useCurrentTime';
 import { useSlackAuth } from '../hooks/useSlackAuth';
 import { useSlackChannels } from '../hooks/useSlackChannels';
 import { useTimePunch } from '../hooks/useTimePunch';
 import styles from '../styles/SlackAuthApp.module.css';
+
 import ChannelSelector from './ChannelSelector';
 import ErrorMessage from './ErrorMessage';
 import TimePunchButtons from './TimePunchButtons';
 import TokenExpiryInfo from './TokenExpiryInfo';
 import UserProfile from './UserProfile';
 
-function SlackAuthApp() {
-  const { authState, tokenInfo, userProfile, login, logout, setAuthError, setAuthLoading } =
-    useSlackAuth();
+function SlackAuthApp(): JSX.Element {
+  const { authState, tokenInfo, userProfile, login, logout, setAuthError, setAuthLoading } = useSlackAuth();
   const {
     channels,
     selectedChannel,
@@ -28,24 +29,24 @@ function SlackAuthApp() {
   // 認証状態が変わった時にチャンネルを取得
   useEffect(() => {
     if (authState.isAuthenticated && tokenInfo?.userToken && channels.length === 0) {
-      fetchChannels(tokenInfo.userToken);
+      void fetchChannels(tokenInfo.userToken);
     }
   }, [authState.isAuthenticated, tokenInfo?.userToken, channels.length, fetchChannels]);
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     clearChannels();
     logout();
   };
 
-  const handleTimePunch = async (type: 'in' | 'out') => {
+  const handleTimePunch = async (type: 'in' | 'out'): Promise<void> => {
     if (tokenInfo?.userToken && selectedChannel) {
       await timePunch(type, tokenInfo.userToken, selectedChannel);
     }
   };
 
-  const handleRetryChannels = () => {
+  const handleRetryChannels = (): void => {
     if (tokenInfo?.userToken) {
-      fetchChannels(tokenInfo.userToken);
+      void fetchChannels(tokenInfo.userToken);
     }
   };
 
@@ -69,15 +70,13 @@ function SlackAuthApp() {
           {/* 開発環境でのテスト機能 */}
           <TokenExpiryInfo userToken={null} />
 
-          {authState.error && (
-            <ErrorMessage error={authState.error} onDismiss={() => setAuthError(null)} />
-          )}
+          {authState.error && <ErrorMessage error={authState.error} onDismiss={() => setAuthError(null)} />}
 
           <div className={styles.buttonContainer}>
             <button onClick={login} disabled={authState.isLoading} className={styles.slackButton}>
               {authState.isLoading ? (
                 <>
-                  <span className={styles.spinner}></span>
+                  <span className={styles.spinner} />
                   認証中...
                 </>
               ) : (
@@ -115,12 +114,9 @@ function SlackAuthApp() {
         </>
       ) : (
         <>
-          <UserProfile
-            userProfile={userProfile}
-            isLoading={authState.isAuthenticated && !userProfile}
-          />
+          <UserProfile userProfile={userProfile} isLoading={authState.isAuthenticated && !userProfile} />
 
-          <TokenExpiryInfo userToken={tokenInfo?.userToken || null} />
+          <TokenExpiryInfo userToken={tokenInfo?.userToken ?? null} />
 
           <p className={styles.description}>
             認証が完了しました！
@@ -140,17 +136,14 @@ function SlackAuthApp() {
             onRetry={handleRetryChannels}
           />
 
-          {(authState.error || channelsError) && (
-            <ErrorMessage
-              error={authState.error || channelsError || ''}
-              onDismiss={() => setAuthError(null)}
-            />
+          {(authState.error ?? channelsError) && (
+            <ErrorMessage error={authState.error ?? channelsError ?? ''} onDismiss={() => setAuthError(null)} />
           )}
 
           <TimePunchButtons
             isLoading={authState.isLoading}
             isDisabled={!selectedChannel}
-            onTimePunch={handleTimePunch}
+            onTimePunch={(type: 'in' | 'out') => void handleTimePunch(type)}
           />
 
           <div className={styles.logoutContainer}>

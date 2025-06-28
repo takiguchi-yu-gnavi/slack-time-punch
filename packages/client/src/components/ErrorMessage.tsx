@@ -1,10 +1,11 @@
 import React from 'react';
+
 import styles from '../styles/ErrorMessage.module.css';
 
-type ErrorMessageProps = {
+interface ErrorMessageProps {
   error: string;
   onDismiss?: () => void;
-};
+}
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, onDismiss }) => (
   <div className={styles.error}>

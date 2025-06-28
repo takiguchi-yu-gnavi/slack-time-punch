@@ -1,20 +1,21 @@
 import { useCallback, useState } from 'react';
+
 import { config } from '../config';
 
-export type SlackChannel = {
+export interface SlackChannel {
   id: string;
   name: string;
   is_member: boolean;
   is_private?: boolean;
-};
+}
 
-type ChannelsApiResponse = {
+interface ChannelsApiResponse {
   success: boolean;
   channels: SlackChannel[];
   error?: string;
-};
+}
 
-type UseSlackChannelsReturn = {
+interface UseSlackChannelsReturn {
   channels: SlackChannel[];
   selectedChannel: string;
   isLoading: boolean;
@@ -22,7 +23,7 @@ type UseSlackChannelsReturn = {
   fetchChannels: (userToken: string) => Promise<void>;
   setSelectedChannel: (channelId: string) => void;
   clearChannels: () => void;
-};
+}
 
 export const useSlackChannels = (): UseSlackChannelsReturn => {
   const [channels, setChannels] = useState<SlackChannel[]>([]);

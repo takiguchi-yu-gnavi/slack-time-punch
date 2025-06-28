@@ -8,8 +8,8 @@ export type {
 } from '@slack-time-punch/shared';
 
 // クライアント専用の型定義
-export type AuthState = {
+export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-};
+}

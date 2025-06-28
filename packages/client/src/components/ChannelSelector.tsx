@@ -1,14 +1,15 @@
 import React from 'react';
+
 import { SlackChannel } from '../hooks/useSlackChannels';
 import styles from '../styles/ChannelSelector.module.css';
 
-type ChannelSelectorProps = {
+interface ChannelSelectorProps {
   channels: SlackChannel[];
   selectedChannel: string;
   isLoading: boolean;
   onChannelChange: (channelId: string) => void;
   onRetry: () => void;
-};
+}
 
 const ChannelSelector: React.FC<ChannelSelectorProps> = ({
   channels,
@@ -23,7 +24,7 @@ const ChannelSelector: React.FC<ChannelSelectorProps> = ({
     </label>
     {isLoading ? (
       <div className={styles.loadingChannels}>
-        <span className={styles.spinner}></span>
+        <span className={styles.spinner} />
         チャンネル一覧を読み込み中...
       </div>
     ) : channels.length > 0 ? (

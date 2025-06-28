@@ -2,64 +2,71 @@
 applyTo: '**'
 ---
 
-あなたは、TypeScript のコードを生成するための AI アシスタントです。以下のガイドラインに従ってください。
+あなたは TypeScript コードを生成する AI アシスタントです。以下のガイドラインとプロジェクト構成に従って回答してください。
 
 # ガイドライン
 
-- **言語:** **TypeScript (`"strict": true`) のみ**。JavaScript
-  (`.js`) ファイルは禁止する。
-- **`any` 型は禁止** 必ず適切な型定義を行い、安全性を担保する。
-- **ユーティリティ型を活用**
-  - `Partial<T>` / `Required<T>` / `Pick<T, K>` / `Omit<T, K>` / `Record<K, T>`
-    など
-  - 再利用性と可読性を高める。
+## 言語と型安全性
+
+- **TypeScript（`"strict": true`）のみ**
+  - JavaScript (`.js`) ファイルの生成は禁止。
+- **`any` 型の使用禁止**
+  - 必ず適切な型定義を行い、安全性を担保する。
 - **型定義は明示的に**
-  - `interface`／`type` を使用し、型の明確化を行う。
-  - `type` はユーティリティ型や複雑な型定義に使用し、`interface`
-    はオブジェクトの構造を定義する。
+  - オブジェクトの構造定義には `interface` を使用
+  - 複雑なユーティリティ型や合成型には `type` を使用
+
+## ユーティリティ型と再利用
+
+- **ユーティリティ型を積極活用**
+  - `Partial<T>`、`Required<T>`、`Pick<T, K>`、`Omit<T, K>`、`Record<K, T>` など
 - **型の再利用を促進**
-  - 型アノテーションを優先して採用し、型アサーション (`as`) は極力使用しない。
-- **型ガードで安全性強化**
-  - `typeof`／`instanceof`／カスタム型ガード関数
-  - 外部入力や API レスポンス時は必ずチェック。
-- **関数はアロー関数で統一**
-  - `const fn = (…): ReturnType => { … }`
-  - `this` の挙動が一定で、可読性も向上。
-- **非同期処理は `async/await` を使用**
-  - `Promise` の使用は避け、可読性を高める。
-- **エラーハンドリングは `try/catch` を使用**
-  - `Promise.catch` は使用せず、明示的なエラーハンドリングを行う。
-- **コードの可読性を重視**
-  - google の [Eng Practices](https://github.com/google/eng-practices)
-    に準拠する。
+  - 型アサーション (`as`) は極力避ける
+  - 共通型は `shared` パッケージなどで一元管理
 
-# プロジェクト
+## 安全なランタイムチェック
 
-- `npm workspace` を使用したモノレポ構成
-- `packages` ディレクトリに各アプリケーションを配置
-- `.env` ファイルを使用して各アプリケーションの環境変数を管理
-- `tsconfig.base.json` はルートに配置し、各パッケージで継承
-- `eslint` と `prettier` を使用し、コード品質を保つ
-- `jest` を使用したテストフレームワーク
+- **型ガード関数**
+  - `typeof`、`instanceof`、カスタム型ガードで外部入力を検証
+- **非同期処理**
+  - `async/await` を用い、`Promise.catch` ではなく `try/catch` で明示的にエラーハンドリング
 
-## ディレクトリ構成
+## コーディングスタイル
+
+- **関数定義はアロー関数で統一**
+
+```ts
+const fn = (...): ReturnType => { … }
+```
+
+- **コード可読性遵守** Google の [Engineering Practices](https://github.com/google/eng-practices) に準拠
+- **静的解析・整形**
+  - ESLint の全ての `error`／`warn` を解消
+  - Prettier でコードフォーマット
+
+# プロジェクト構成
+
+- **Monorepo**: `npm workspace` を使用
+- **ディレクトリ構成**
 
 ```bash
 .
 ├── packages
-│   ├── lambda # AWS Lambda (TypeScript)
-│   ├── cdk # AWS CDK (TypeScript)
-│   ├── tauri # Tauri デスクトップアプリ (React + CSS-Modules + TypeScript + Rust)
-│   └── shared # 共通の型定義やユーティリティ関数
-├── tsconfig.base.json
+│   ├── lambda   # AWS Lambda (TypeScript)
+│   ├── cdk      # AWS CDK (TypeScript + WAF + CloudFront + API Gateway + Lambda)
+│   ├── tauri    # Tauri アプリ (React + CSS Modules + TypeScript + Rust)
+│   └── shared   # 共通の型定義・ユーティリティ
+├── tsconfig.base.json # ルートの TypeScript 設定
 ├── package.json
-├── eslint.config.js
-└── prettier.config.js
+├── eslint.config.mjs
+└── prettier.config.mjs
 ```
 
-# 注意点
-
-- 各アプリケーションは独立しており、必要に応じて共通ライブラリを利用すること
-- 型定義は `packages/types` に集約し、各アプリケーションで再利用すること
-- ユーティリティ関数は `packages/utils`
-  に集約し、各アプリケーションで再利用すること
+- **環境変数管理**
+  - 各パッケージのルートに `.env` ファイルを配置
+- **TypeScript 設定**
+  - ルートの `tsconfig.base.json` を各パッケージで `extends`
+- **テストフレームワーク**
+  - **Jest** を使用
+  - 各パッケージにテストスクリプトを定義
+  - テスト関数は `describe` と `test` を使用

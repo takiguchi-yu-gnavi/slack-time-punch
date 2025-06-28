@@ -1,17 +1,14 @@
 import React from 'react';
+
 import styles from '../styles/TimePunchButtons.module.css';
 
-type TimePunchButtonsProps = {
+interface TimePunchButtonsProps {
   isLoading: boolean;
   isDisabled: boolean;
   onTimePunch: (type: 'in' | 'out') => void;
-};
+}
 
-const TimePunchButtons: React.FC<TimePunchButtonsProps> = ({
-  isLoading,
-  isDisabled,
-  onTimePunch,
-}) => (
+const TimePunchButtons: React.FC<TimePunchButtonsProps> = ({ isLoading, isDisabled, onTimePunch }) => (
   <div className={styles.punchButtons}>
     <button
       onClick={() => onTimePunch('in')}
@@ -20,7 +17,7 @@ const TimePunchButtons: React.FC<TimePunchButtonsProps> = ({
     >
       {isLoading ? (
         <>
-          <span className={styles.spinner}></span>
+          <span className={styles.spinner} />
           投稿中...
         </>
       ) : (
@@ -35,7 +32,7 @@ const TimePunchButtons: React.FC<TimePunchButtonsProps> = ({
     >
       {isLoading ? (
         <>
-          <span className={styles.spinner}></span>
+          <span className={styles.spinner} />
           投稿中...
         </>
       ) : (

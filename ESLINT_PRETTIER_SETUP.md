@@ -1,28 +1,35 @@
 # ESLint & Prettier 設定ガイド
 
-このドキュメントは、Slack Time
-Punch モノレポのESLintとPrettierの設定について説明します。
+このドキュメントは、Slack Time Punch モノレポのESLint v9 (Flat
+Config) とPrettierの設定について説明します。
 
 ## 概要
 
-- **ESLint**: コード品質とスタイルをチェック
+- **ESLint v9**: 厳格な型チェックとコード品質チェック（Flat Config形式）
 - **Prettier**: コードフォーマットを自動整形
-- **設定対象**: `packages/client`, `packages/server`, `packages/shared`
+- **TypeScript**: strict modeでany型を完全禁止
+- **設定対象**: `packages/client` (React), `packages/server` (Node.js),
+  `packages/shared` (共通型定義)
 
 ## 設定ファイル
 
-### ESLint設定 (`.eslintrc.json`)
+### ESLint設定 (`eslint.config.mjs`) - Flat Config形式
 
-```json
-{
-  "root": true,
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ]
-  // ... その他の設定
-}
+```javascript
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactPlugin from 'eslint-plugin-react';
+import prettierConfig from 'eslint-config-prettier';
+
+export default tseslint.config(
+  // TypeScript strict type checking
+  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  // React用設定（client package）
+  // Node.js用設定（server package）
+  // 共通設定（shared package）
+  prettierConfig // Prettier競合回避
+);
 ```
 
 ### Prettier設定 (`prettier.config.js`)
@@ -34,15 +41,23 @@ module.exports = {
   trailingComma: 'es5',
   tabWidth: 2,
   printWidth: 100,
-  // ... その他の設定
+  endOfLine: 'lf',
 };
 ```
 
-### VSCode設定 (`.vscode/settings.json`)
+### TypeScript設定 (`tsconfig.base.json`)
 
-- 保存時の自動フォーマット
-- ESLintの自動修正
-- TypeScript設定の最適化
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true
+    // 厳格な型チェック設定
+  },
+  "include": ["packages/*/src/**/*"]
+}
+```
 
 ## 利用可能なコマンド
 
@@ -87,9 +102,82 @@ npm run format
 npm run format:check
 ```
 
-## ESLintルール詳細
+## 主要な型安全性ルール
 
-### TypeScript関連
+### any型の完全禁止
+
+- `@typescript-eslint/no-explicit-any`: any型の明示的な使用を禁止
+- `@typescript-eslint/no-unsafe-assignment`: any値の代入を禁止
+- `@typescript-eslint/no-unsafe-call`: any値の関数呼び出しを禁止
+- `@typescript-eslint/no-unsafe-member-access`: any値のプロパティアクセスを禁止
+- `@typescript-eslint/no-unsafe-return`: any値の戻り値を禁止
+- `@typescript-eslint/no-unsafe-argument`: any値の引数渡しを禁止
+
+### 型安全性の強化
+
+- `@typescript-eslint/prefer-nullish-coalescing`: `??` 演算子の使用を推奨
+- `@typescript-eslint/prefer-optional-chain`: `?.` 演算子の使用を推奨
+- `@typescript-eslint/no-non-null-assertion`: `!` 演算子の使用を禁止
+- `@typescript-eslint/explicit-function-return-type`: 関数の戻り値型を明示
+- `@typescript-eslint/consistent-type-definitions`: `interface` の使用を強制
+
+### React特有のルール
+
+- React 17+ 新しいJSX変換に対応
+- アクセシビリティ（a11y）ルール
+- Hooks の正しい使用
+
+### Node.js特有のルール
+
+- プロセス環境変数の適切な使用
+- 非同期処理の安全な実装
+
+## 運用フロー
+
+### 1. 開発時
+
+```bash
+# 開発開始前にsharedパッケージをビルド
+npm run build --workspace=packages/shared
+
+# コード変更後
+npm run lint        # エラーチェック
+npm run lint:fix    # 自動修正可能なエラーを修正
+npm run format      # コードフォーマット
+```
+
+### 2. CI/CD
+
+```bash
+# 型チェック・リント・フォーマットチェック
+npm run lint
+npm run format:check
+```
+
+### 3. VS Code設定
+
+- 保存時の自動ESLint修正
+- 保存時の自動Prettierフォーマット
+- TypeScript strict mode
+
+## トラブルシューティング
+
+### ESLint v9 移行関連
+
+- `.eslintrc.*` ファイルは削除済み（Flat Config移行）
+- `eslint.config.mjs` 形式で ES module として動作
+- `package.json` の `"type": "module"` 設定不要
+
+### 型エラーが多発する場合
+
+1. `shared` パッケージをビルド: `npm run build --workspace=packages/shared`
+2. `tsconfig.base.json` の `include` パスを確認
+3. 各パッケージの `tsconfig.json` で `extends` を確認
+
+### パフォーマンスの問題
+
+- ESLint の `project` オプションで適切な `tsconfig.json` を指定
+- 不要なファイルを `ignores` に追加
 
 - `@typescript-eslint/no-explicit-any`: `any`型の使用を禁止
 - `@typescript-eslint/consistent-type-definitions`:

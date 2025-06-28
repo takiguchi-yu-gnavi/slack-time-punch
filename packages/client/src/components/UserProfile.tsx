@@ -1,17 +1,18 @@
-import { SlackUserProfile } from '../hooks/useSlackAuth';
+import type { SlackUserProfile } from '@slack-time-punch/shared';
+
 import styles from '../styles/UserProfile.module.css';
 
-type UserProfileProps = {
+interface UserProfileProps {
   userProfile: SlackUserProfile | null;
   isLoading?: boolean;
-};
+}
 
-const UserProfile = ({ userProfile, isLoading = false }: UserProfileProps) => {
+const UserProfile = ({ userProfile, isLoading = false }: UserProfileProps): JSX.Element | null => {
   if (isLoading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
-          <div className={styles.spinner}></div>
+          <div className={styles.spinner} />
           <span>ユーザー情報を読み込み中...</span>
         </div>
       </div>
@@ -22,10 +23,8 @@ const UserProfile = ({ userProfile, isLoading = false }: UserProfileProps) => {
     return null;
   }
 
-  const displayName =
-    userProfile.profile?.display_name || userProfile.profile?.real_name || userProfile.name;
-  const profileImage =
-    userProfile.profile?.image_72 || userProfile.profile?.image_48 || userProfile.profile?.image_32;
+  const displayName = userProfile.profile?.display_name ?? userProfile.profile?.real_name ?? userProfile.name;
+  const profileImage = userProfile.profile?.image_72 ?? userProfile.profile?.image_48 ?? userProfile.profile?.image_32;
 
   return (
     <div className={styles.container}>
@@ -49,10 +48,7 @@ const UserProfile = ({ userProfile, isLoading = false }: UserProfileProps) => {
               }}
             />
           ) : null}
-          <div
-            className={styles.avatarFallback}
-            style={{ display: profileImage ? 'none' : 'flex' }}
-          >
+          <div className={styles.avatarFallback} style={{ display: profileImage ? 'none' : 'flex' }}>
             👤
           </div>
         </div>

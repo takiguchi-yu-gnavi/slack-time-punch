@@ -1,12 +1,15 @@
+import { type TokenInfoApiResponse } from '@slack-time-punch/shared';
 import { useEffect, useState } from 'react';
+
+
 import { config } from '../config';
 import styles from '../styles/TokenExpiryInfo.module.css';
 
-type TokenExpiryInfoProps = {
+interface TokenExpiryInfoProps {
   userToken: string | null;
-};
+}
 
-type TokenExpiryData = {
+interface TokenExpiryData {
   expires_in_seconds?: number;
   expires_in_hours?: number;
   expires_in_days?: number;
@@ -14,9 +17,9 @@ type TokenExpiryData = {
   expiration_date_local?: string;
   remaining_time?: string;
   is_permanent?: boolean; // 永続的なトークンかどうか
-};
+}
 
-const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
+const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps): JSX.Element | null => {
   const [expiryInfo, setExpiryInfo] = useState<TokenExpiryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +31,13 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
       return;
     }
 
-    const fetchExpiryInfo = async () => {
+    const fetchExpiryInfo = async (): Promise<void> => {
       setIsLoading(true);
       setError(null);
 
       try {
         const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`);
-        const data = await response.json();
+        const data = await response.json() as TokenInfoApiResponse;
 
         if (data.success && data.token_info) {
           setExpiryInfo(data.token_info);
@@ -50,17 +53,17 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
       }
     };
 
-    fetchExpiryInfo();
+    void fetchExpiryInfo();
   }, [userToken]);
 
-  const handleTestPermanent = async () => {
+  const handleTestPermanent = async (): Promise<void> => {
     setTestMode('permanent');
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`${config.SERVER_URL}/auth/mock-user-info?type=permanent`);
-      const data = await response.json();
+      const data = await response.json() as TokenInfoApiResponse;
 
       if (data.success && data.token_info) {
         setExpiryInfo(data.token_info);
@@ -73,14 +76,14 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
     }
   };
 
-  const handleTestExpiring = async () => {
+  const handleTestExpiring = async (): Promise<void> => {
     setTestMode('expiring');
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`${config.SERVER_URL}/auth/mock-user-info?type=expiring`);
-      const data = await response.json();
+      const data = await response.json() as TokenInfoApiResponse;
 
       if (data.success && data.token_info) {
         setExpiryInfo(data.token_info);
@@ -104,10 +107,10 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
           </div>
 
           <div className={styles.testButtons}>
-            <button onClick={handleTestPermanent} className={styles.testButton}>
+            <button onClick={() => void handleTestPermanent()} className={styles.testButton}>
               永続トークンをテスト
             </button>
-            <button onClick={handleTestExpiring} className={styles.testButton}>
+            <button onClick={() => void handleTestExpiring()} className={styles.testButton}>
               有効期限付きトークンをテスト
             </button>
           </div>
@@ -163,7 +166,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
   const isExpiringVerySOON = expiryInfo.expires_in_hours < 1;
 
   // コンテナのクラス名を決定
-  const getContainerClassName = () => {
+  const getContainerClassName = (): string => {
     const classes = [styles.container];
     if (isExpiringVerySOON) {
       classes.push(styles.critical);
@@ -176,9 +179,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
   return (
     <div className={getContainerClassName()}>
       <div className={styles.header}>
-        <span className={styles.icon}>
-          {isExpiringVerySOON ? '🚨' : isExpiringSoon ? '⚠️' : '🕐'}
-        </span>
+        <span className={styles.icon}>{isExpiringVerySOON ? '🚨' : isExpiringSoon ? '⚠️' : '🕐'}</span>
         <span className={styles.title}>認証トークン有効期限</span>
       </div>
 
@@ -190,9 +191,7 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps) => {
 
         {isExpiringSoon && (
           <div className={styles.warningMessage}>
-            {isExpiringVerySOON
-              ? '認証の有効期限が1時間を切りました！'
-              : '認証の有効期限が24時間以内です。'}
+            {isExpiringVerySOON ? '認証の有効期限が1時間を切りました！' : '認証の有効期限が24時間以内です。'}
           </div>
         )}
       </div>

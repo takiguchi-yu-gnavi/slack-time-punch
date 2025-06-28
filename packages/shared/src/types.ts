@@ -1,5 +1,5 @@
 // Slack API型定義
-export type SlackOAuthResponse = {
+export interface SlackOAuthResponse {
   ok: boolean;
   access_token: string;
   token_type: string;
@@ -20,19 +20,19 @@ export type SlackOAuthResponse = {
     access_token?: string;
     token_type?: string;
   };
-};
+}
 
-export type SlackErrorResponse = {
+export interface SlackErrorResponse {
   ok: false;
   error: string;
-};
+}
 
-export type AuthState = {
+export interface AuthState {
   state: string;
   timestamp: number;
-};
+}
 
-export type TokenExpiryInfo = {
+export interface TokenExpiryInfo {
   expires_in_seconds?: number;
   expires_in_hours?: number;
   expires_in_days?: number;
@@ -40,9 +40,9 @@ export type TokenExpiryInfo = {
   expiration_date_local?: string;
   remaining_time?: string;
   is_permanent?: boolean; // Token Rotationが無効で永続的な場合はtrue
-};
+}
 
-export type UserInfoResponse = {
+export interface UserInfoResponse {
   success: boolean;
   user: {
     id: string;
@@ -62,33 +62,33 @@ export type UserInfoResponse = {
     };
   };
   token_info?: TokenExpiryInfo;
-};
+}
 
 // API レスポンス共通
-export type ApiResponse<T = unknown> = {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
-};
+}
 
 // Slack API 関連の型定義
-export type SlackApiResponse<T = unknown> = {
+export interface SlackApiResponse<T = unknown> {
   ok: boolean;
   error?: string;
   data?: T;
   [key: string]: unknown;
-};
+}
 
-export type SlackChannel = {
+export interface SlackChannel {
   id: string;
   name: string;
   is_private?: boolean;
   is_archived?: boolean;
   is_member?: boolean;
-};
+}
 
-export type SlackUser = {
+export interface SlackUser {
   id: string;
   name: string;
   real_name?: string;
@@ -102,14 +102,46 @@ export type SlackUser = {
     image_192?: string;
     image_512?: string;
   };
-};
+}
 
-export type SlackMessage = {
+export interface SlackUserProfile {
+  id: string;
+  name: string;
+  team_id: string;
+  team_name: string;
+  profile?: {
+    display_name: string;
+    real_name: string;
+    image_24?: string;
+    image_32?: string;
+    image_48?: string;
+    image_72?: string;
+    image_192?: string;
+    image_512?: string;
+    image_original?: string;
+  };
+}
+
+export interface SlackMessage {
   channel: string;
   text: string;
   ts?: string;
   user?: string;
-};
+}
 
 // HTTP リクエストのパラメータ型
 export type HttpRequestData = Record<string, unknown>;
+
+// Token情報APIの応答型
+export interface TokenInfoApiResponse {
+  success: boolean;
+  token_info?: TokenExpiryInfo;
+  error?: string;
+}
+
+// ユーザー情報APIの応答型
+export interface UserInfoApiResponse {
+  success: boolean;
+  user?: SlackUserProfile;
+  error?: string;
+}

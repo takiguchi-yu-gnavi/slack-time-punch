@@ -1,8 +1,9 @@
-import { AuthState } from '@slack-time-punch/shared';
 import { randomBytes } from 'node:crypto';
 
+import { AuthState } from '@slack-time-punch/shared';
+
 class StateManager {
-  private states: Map<string, AuthState> = new Map();
+  private states = new Map<string, AuthState>();
   private readonly expiry = 10 * 60 * 1000; // 10分
 
   generateState(): string {

@@ -8,26 +8,26 @@ export type {
 } from '@slack-time-punch/shared';
 
 // クライアント専用の型定義
-export type AuthState = {
+export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-};
+}
 
-export type PostMessageApiResponse = {
+export interface PostMessageApiResponse {
   success?: boolean;
   error?: string;
-};
+}
 
-export type SlackUserInfo = {
+export interface SlackUserInfo {
   id: string;
   name: string;
   team_id: string;
   team_name: string;
-};
+}
 
-export type UserInfoApiResponse = {
+export interface UserInfoApiResponse {
   success: boolean;
   user: SlackUserInfo;
   error?: string;
-};
+}

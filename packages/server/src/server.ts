@@ -1,10 +1,12 @@
+import https from 'https';
+import path from 'path';
+
 import { getHostConfig } from '@slack-time-punch/shared';
 import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { Application } from 'express';
-import https from 'https';
-import path from 'path';
+
 import { authRoutes } from './routes/auth';
 
 // 環境変数の読み込み（ルートディレクトリの.envファイルを指定）
@@ -14,7 +16,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 const hostConfig = getHostConfig();
 
 // SSL/TLS設定の初期化とログ出力
-const initializeSSLSettings = () => {
+const initializeSSLSettings = (): void => {
   console.log('🔒 SSL/TLS設定の初期化:', {
     NODE_ENV: process.env.NODE_ENV,
     DOCKER: process.env.DOCKER,
@@ -51,7 +53,7 @@ class SlackOAuthApp {
 
   constructor() {
     this.app = express();
-    this.port = parseInt(process.env.PORT || '3000');
+    this.port = parseInt(process.env.PORT ?? '3000');
     this.initializeMiddleware();
     this.initializeRoutes();
   }
@@ -98,7 +100,7 @@ class SlackOAuthApp {
       res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: process.env.NODE_ENV ?? 'development',
         clientUrl: hostConfig.CLIENT_URL,
         serverUrl: hostConfig.SERVER_URL,
       });
@@ -116,7 +118,7 @@ class SlackOAuthApp {
       console.log(`📍 サーバーURL: ${hostConfig.SERVER_URL}`);
       console.log(`🔑 Slack認証: ${hostConfig.SERVER_URL}/auth/slack`);
       console.log(`👥 クライアントURL: ${hostConfig.CLIENT_URL}`);
-      console.log(`🔧 環境: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔧 環境: ${process.env.NODE_ENV ?? 'development'}`);
     });
   }
 }

@@ -1,11 +1,19 @@
 import { SlackChannel } from '@slack-time-punch/shared';
 import cors from 'cors';
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+
 import { SlackAuthService } from '../services/slackAuth';
 import { stateManager } from '../utils/stateManager';
 
+// Express async handler wrapper
+const asyncHandler =
+  (fn: (req: Request, res: Response) => Promise<Response | void>) =>
+  (req: Request, res: Response, next: NextFunction): void => {
+    Promise.resolve(fn(req, res)).catch(next);
+  };
+
 // 型定義
-type UserResponseData = {
+interface UserResponseData {
   success: boolean;
   user: {
     id: string;
@@ -35,13 +43,13 @@ type UserResponseData = {
     remaining_time?: string;
     is_permanent: boolean;
   };
-};
+}
 
 const router = express.Router();
 
 // 環境変数から設定を取得
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:5173';
+const SERVER_URL = process.env.SERVER_URL ?? 'http://localhost:3000';
 
 // CORS設定（ルーター固有）
 router.use(
@@ -88,57 +96,59 @@ router.get('/slack', (req: Request, res: Response) => {
  * OAuth認証コールバックエンドポイント
  * GET /auth/slack/callback
  */
-router.get('/slack/callback', async (req: Request, res: Response) => {
-  try {
-    const { code, state, error } = req.query;
+router.get(
+  '/slack/callback',
+  asyncHandler(async (req: Request, res: Response): Promise<Response | void> => {
+    try {
+      const { code, state, error } = req.query;
 
-    // エラーチェック
-    if (error) {
-      console.error('Slack OAuth エラー:', error);
-      return res.status(400).json({ error: 'OAuth認証がキャンセルされました' });
-    }
+      // エラーチェック
+      if (error) {
+        console.error('Slack OAuth エラー:', error);
+        return res.status(400).json({ error: 'OAuth認証がキャンセルされました' });
+      }
 
-    // パラメータの検証
-    if (!code || !state) {
-      return res.status(400).json({ error: '必要なパラメータが不足しています' });
-    }
+      // パラメータの検証
+      if (!code || !state) {
+        return res.status(400).json({ error: '必要なパラメータが不足しています' });
+      }
 
-    // stateパラメータの検証（CSRF攻撃対策）
-    if (!stateManager.validateState(state as string)) {
-      return res.status(400).json({ error: '無効なstateパラメータです' });
-    }
+      // stateパラメータの検証（CSRF攻撃対策）
+      if (!stateManager.validateState(state as string)) {
+        return res.status(400).json({ error: '無効なstateパラメータです' });
+      }
 
-    // Slack認証サービスのインスタンスを取得
-    const slackAuth = getSlackAuthService();
+      // Slack認証サービスのインスタンスを取得
+      const slackAuth = getSlackAuthService();
 
-    // 認証コードをアクセストークンに交換
-    const tokenResponse = await slackAuth.exchangeCodeForToken(code as string);
+      // 認証コードをアクセストークンに交換
+      const tokenResponse = await slackAuth.exchangeCodeForToken(code as string);
 
-    console.log('OAuth認証結果:', {
-      hasUserToken: !!tokenResponse.authed_user.access_token,
-      hasBotToken: !!tokenResponse.access_token,
-      userTokenLength: tokenResponse.authed_user.access_token?.length || 0,
-      scopes: tokenResponse.scope,
-      userScopes: tokenResponse.authed_user.scope,
-    });
+      console.log('OAuth認証結果:', {
+        hasUserToken: !!tokenResponse.authed_user.access_token,
+        hasBotToken: !!tokenResponse.access_token,
+        userTokenLength: tokenResponse.authed_user.access_token?.length ?? 0,
+        scopes: tokenResponse.scope,
+        userScopes: tokenResponse.authed_user.scope,
+      });
 
-    // 成功時、トークン情報をURLパラメータとして安全に渡す
-    const redirectUrl = process.env.NODE_ENV === 'production' ? '/' : CLIENT_URL;
+      // 成功時、トークン情報をURLパラメータとして安全に渡す
+      const redirectUrl = process.env.NODE_ENV === 'production' ? '/' : CLIENT_URL;
 
-    // トークン情報をBase64エンコードして安全に渡す
-    const tokenData = {
-      userToken: tokenResponse.authed_user.access_token || '',
-      botToken: tokenResponse.access_token || '',
-      teamId: tokenResponse.team?.id || '',
-      userId: tokenResponse.authed_user?.id || '',
-    };
+      // トークン情報をBase64エンコードして安全に渡す
+      const tokenData = {
+        userToken: tokenResponse.authed_user.access_token ?? '',
+        botToken: tokenResponse.access_token ?? '',
+        teamId: tokenResponse.team?.id ?? '',
+        userId: tokenResponse.authed_user?.id ?? '',
+      };
 
-    // Base64エンコード（URLセーフ）
-    const encodedTokenData = Buffer.from(JSON.stringify(tokenData)).toString('base64url');
+      // Base64エンコード（URLセーフ）
+      const encodedTokenData = Buffer.from(JSON.stringify(tokenData)).toString('base64url');
 
-    console.log('🔐 エンコードしたトークン情報の長さ:', encodedTokenData.length);
+      console.log('🔐 エンコードしたトークン情報の長さ:', encodedTokenData.length);
 
-    const successHtml = `
+      const successHtml = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -198,16 +208,17 @@ router.get('/slack/callback', async (req: Request, res: Response) => {
     </body>
     </html>`;
 
-    res.setHeader('Content-Type', 'text/html');
-    res.send(successHtml);
-  } catch (error) {
-    console.error('OAuth callback エラー:', error);
-    res.status(500).json({
-      error: 'OAuth認証の処理に失敗しました',
-      message: error instanceof Error ? error.message : '不明なエラー',
-    });
-  }
-});
+      res.setHeader('Content-Type', 'text/html');
+      res.send(successHtml);
+    } catch (error) {
+      console.error('OAuth callback エラー:', error);
+      return res.status(500).json({
+        error: 'OAuth認証の処理に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    }
+  })
+);
 
 /**
  * 認証状態確認エンドポイント
@@ -225,240 +236,260 @@ router.get('/status', (req: Request, res: Response) => {
  * チャンネル一覧取得エンドポイント
  * GET /auth/channels?token=<user_token>
  */
-router.get('/channels', async (req: Request, res: Response) => {
-  try {
-    const { token } = req.query;
+router.get(
+  '/channels',
+  asyncHandler(async (req: Request, res: Response): Promise<Response | void> => {
+    try {
+      const { token } = req.query;
 
-    console.log('チャンネル取得リクエスト:', {
-      hasToken: !!token,
-      tokenType: typeof token,
-      tokenLength: typeof token === 'string' ? token.length : 0,
-    });
+      console.log('チャンネル取得リクエスト:', {
+        hasToken: !!token,
+        tokenType: typeof token,
+        tokenLength: typeof token === 'string' ? token.length : 0,
+      });
 
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ error: 'ユーザートークンが必要です' });
-    }
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: 'ユーザートークンが必要です' });
+      }
 
-    const slackAuth = getSlackAuthService();
-    const channels = await slackAuth.getChannels(token);
+      const slackAuth = getSlackAuthService();
+      const channels = await slackAuth.getChannels(token);
 
-    console.log('Slack API レスポンス:', {
-      ok: channels.ok,
-      error: channels.error,
-      channelCount: (channels.data as { channels?: SlackChannel[] })?.channels?.length,
-    });
+      console.log('Slack API レスポンス:', {
+        ok: channels.ok,
+        error: channels.error,
+        channelCount: (channels.data as { channels?: SlackChannel[] })?.channels?.length,
+      });
 
-    if (!channels.ok) {
-      return res.status(400).json({
+      if (!channels.ok) {
+        return res.status(400).json({
+          error: 'チャンネル取得に失敗しました',
+          slack_error: channels.error,
+          details: channels,
+        });
+      }
+
+      const channelsData = (channels.data as { channels?: SlackChannel[] })?.channels ?? [];
+
+      // チャンネルデータの詳細をログ出力
+      if (channelsData.length > 0) {
+        console.log('最初のチャンネルの詳細:', {
+          id: channelsData[0].id,
+          name: channelsData[0].name,
+          is_member: channelsData[0].is_member,
+          is_private: channelsData[0].is_private,
+          allKeys: Object.keys(channelsData[0]),
+        });
+      }
+
+      const mappedChannels = channelsData.map((channel: SlackChannel) => ({
+        id: channel.id,
+        name: channel.name,
+        is_private: channel.is_private,
+        is_member: channel.is_member,
+      }));
+
+      console.log('返すチャンネル数:', mappedChannels?.length || 0);
+      console.log('マップ後のチャンネル例:', mappedChannels?.[0]);
+
+      res.json({
+        success: true,
+        channels: mappedChannels,
+      });
+    } catch (error) {
+      console.error('チャンネル取得エラー:', error);
+      return res.status(500).json({
         error: 'チャンネル取得に失敗しました',
-        slack_error: channels.error,
-        details: channels,
+        message: error instanceof Error ? error.message : '不明なエラー',
       });
     }
-
-    const channelsData = (channels.data as { channels?: SlackChannel[] })?.channels || [];
-
-    // チャンネルデータの詳細をログ出力
-    if (channelsData.length > 0) {
-      console.log('最初のチャンネルの詳細:', {
-        id: channelsData[0].id,
-        name: channelsData[0].name,
-        is_member: channelsData[0].is_member,
-        is_private: channelsData[0].is_private,
-        allKeys: Object.keys(channelsData[0]),
-      });
-    }
-
-    const mappedChannels = channelsData.map((channel: SlackChannel) => ({
-      id: channel.id,
-      name: channel.name,
-      is_private: channel.is_private,
-      is_member: channel.is_member,
-    }));
-
-    console.log('返すチャンネル数:', mappedChannels?.length || 0);
-    console.log('マップ後のチャンネル例:', mappedChannels?.[0]);
-
-    res.json({
-      success: true,
-      channels: mappedChannels,
-    });
-  } catch (error) {
-    console.error('チャンネル取得エラー:', error);
-    res.status(500).json({
-      error: 'チャンネル取得に失敗しました',
-      message: error instanceof Error ? error.message : '不明なエラー',
-    });
-  }
-});
+  })
+);
 
 /**
  * メッセージ投稿エンドポイント
  * POST /auth/post-message
  */
-router.post('/post-message', async (req: Request, res: Response) => {
-  try {
-    const { userToken, channelId, message } = req.body;
+router.post(
+  '/post-message',
+  asyncHandler(async (req: Request, res: Response): Promise<Response | void> => {
+    try {
+      const { userToken, channelId, message } = req.body as {
+        userToken?: string;
+        channelId?: string;
+        message?: string;
+      };
 
-    if (!userToken || !channelId || !message) {
-      return res.status(400).json({
-        error: 'ユーザートークン、チャンネルID、メッセージが必要です',
+      if (
+        !userToken ||
+        !channelId ||
+        !message ||
+        typeof userToken !== 'string' ||
+        typeof channelId !== 'string' ||
+        typeof message !== 'string'
+      ) {
+        return res.status(400).json({
+          error: 'ユーザートークン、チャンネルID、メッセージが必要です',
+        });
+      }
+
+      const slackAuth = getSlackAuthService();
+      const result = await slackAuth.postMessageAsUser(userToken, channelId, message);
+
+      if (!result.ok) {
+        return res.status(400).json({
+          error: 'メッセージ投稿に失敗しました',
+          slack_error: result.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'メッセージを投稿しました',
+        timestamp: result.ts,
+        channel: result.channel,
       });
-    }
-
-    const slackAuth = getSlackAuthService();
-    const result = await slackAuth.postMessageAsUser(userToken, channelId, message);
-
-    if (!result.ok) {
-      return res.status(400).json({
+    } catch (error) {
+      console.error('メッセージ投稿エラー:', error);
+      return res.status(500).json({
         error: 'メッセージ投稿に失敗しました',
-        slack_error: result.error,
+        message: error instanceof Error ? error.message : '不明なエラー',
       });
     }
-
-    res.json({
-      success: true,
-      message: 'メッセージを投稿しました',
-      timestamp: result.ts,
-      channel: result.channel,
-    });
-  } catch (error) {
-    console.error('メッセージ投稿エラー:', error);
-    res.status(500).json({
-      error: 'メッセージ投稿に失敗しました',
-      message: error instanceof Error ? error.message : '不明なエラー',
-    });
-  }
-});
+  })
+);
 
 /**
  * ユーザー情報取得エンドポイント
  * GET /auth/user-info?token=<user_token>
  */
-router.get('/user-info', async (req: Request, res: Response) => {
-  try {
-    const { token } = req.query;
+router.get(
+  '/user-info',
+  asyncHandler(async (req: Request, res: Response): Promise<Response | void> => {
+    try {
+      const { token } = req.query;
 
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ error: 'ユーザートークンが必要です' });
-    }
-
-    const slackAuth = getSlackAuthService();
-
-    // 基本ユーザー情報取得
-    const userInfo = await slackAuth.getUserInfo(token);
-
-    if (!userInfo.ok) {
-      return res.status(400).json({
-        error: 'ユーザー情報取得に失敗しました',
-        slack_error: userInfo.error,
-      });
-    }
-
-    // 詳細プロフィール情報取得
-    const profileInfo = await slackAuth.getUserProfile(token);
-
-    console.log('ユーザープロフィール取得:', {
-      ok: profileInfo.ok,
-      hasProfile: !!profileInfo.profile,
-      profileKeys: profileInfo.profile ? Object.keys(profileInfo.profile) : [],
-    });
-
-    // userInfoの型ガード
-    const userInfoData = userInfo.data as unknown as {
-      user_id: string;
-      user: string;
-      team_id: string;
-      team: string;
-      expires_in?: number;
-    };
-
-    const responseData: UserResponseData = {
-      success: true,
-      user: {
-        id: userInfoData.user_id,
-        name: userInfoData.user,
-        team_id: userInfoData.team_id,
-        team_name: userInfoData.team,
-      },
-    };
-
-    // トークンの有効期限情報を追加
-    if (userInfoData.expires_in) {
-      // Token Rotationが有効な場合：有効期限あり
-      const expiresIn = userInfoData.expires_in;
-      const expirationDate = new Date(Date.now() + expiresIn * 1000);
-
-      responseData.token_info = {
-        expires_in_seconds: expiresIn,
-        expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
-        expires_in_days: Math.round((expiresIn / 86400) * 100) / 100,
-        expiration_date: expirationDate.toISOString(),
-        expiration_date_local: expirationDate.toLocaleString('ja-JP'),
-        remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
-        is_permanent: false,
-      };
-
-      console.log('🕐 Token Rotationが有効：有効期限あり', {
-        expires_in_seconds: expiresIn,
-        expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
-        expiration_date: expirationDate.toLocaleString('ja-JP'),
-      });
-    } else {
-      // Token Rotationが無効な場合：永続的なトークン
-      responseData.token_info = {
-        is_permanent: true,
-      };
-
-      console.log('♾️ Token Rotationが無効：永続的なトークン（有効期限なし）');
-    }
-
-    // プロフィール情報が取得できた場合は追加
-    if (profileInfo.ok && profileInfo.data) {
-      const profileData = profileInfo.data as unknown as {
-        profile?: {
-          display_name?: string;
-          real_name?: string;
-          image_24?: string;
-          image_32?: string;
-          image_48?: string;
-          image_72?: string;
-          image_192?: string;
-          image_512?: string;
-          image_original?: string;
-        };
-      };
-
-      if (profileData.profile) {
-        responseData.user.profile = {
-          display_name: profileData.profile.display_name || userInfoData.user,
-          real_name: profileData.profile.real_name || userInfoData.user,
-          image_24: profileData.profile.image_24,
-          image_32: profileData.profile.image_32,
-          image_48: profileData.profile.image_48,
-          image_72: profileData.profile.image_72,
-          image_192: profileData.profile.image_192,
-          image_512: profileData.profile.image_512,
-          image_original: profileData.profile.image_original,
-        };
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: 'ユーザートークンが必要です' });
       }
-    }
 
-    res.json(responseData);
-  } catch (error) {
-    console.error('ユーザー情報取得エラー:', error);
-    res.status(500).json({
-      error: 'ユーザー情報取得に失敗しました',
-      message: error instanceof Error ? error.message : '不明なエラー',
-    });
-  }
-});
+      const slackAuth = getSlackAuthService();
+
+      // 基本ユーザー情報取得
+      const userInfo = await slackAuth.getUserInfo(token);
+
+      if (!userInfo.ok) {
+        return res.status(400).json({
+          error: 'ユーザー情報取得に失敗しました',
+          slack_error: userInfo.error,
+        });
+      }
+
+      // 詳細プロフィール情報取得
+      const profileInfo = await slackAuth.getUserProfile(token);
+
+      console.log('ユーザープロフィール取得:', {
+        ok: profileInfo.ok,
+        hasProfile: !!profileInfo.profile,
+        profileKeys: profileInfo.profile ? Object.keys(profileInfo.profile) : [],
+      });
+
+      // userInfoの型ガード
+      const userInfoData = userInfo.data as unknown as {
+        user_id: string;
+        user: string;
+        team_id: string;
+        team: string;
+        expires_in?: number;
+      };
+
+      const responseData: UserResponseData = {
+        success: true,
+        user: {
+          id: userInfoData.user_id,
+          name: userInfoData.user,
+          team_id: userInfoData.team_id,
+          team_name: userInfoData.team,
+        },
+      };
+
+      // トークンの有効期限情報を追加
+      if (userInfoData.expires_in) {
+        // Token Rotationが有効な場合：有効期限あり
+        const expiresIn = userInfoData.expires_in;
+        const expirationDate = new Date(Date.now() + expiresIn * 1000);
+
+        responseData.token_info = {
+          expires_in_seconds: expiresIn,
+          expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
+          expires_in_days: Math.round((expiresIn / 86400) * 100) / 100,
+          expiration_date: expirationDate.toISOString(),
+          expiration_date_local: expirationDate.toLocaleString('ja-JP'),
+          remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
+          is_permanent: false,
+        };
+
+        console.log('🕐 Token Rotationが有効：有効期限あり', {
+          expires_in_seconds: expiresIn,
+          expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
+          expiration_date: expirationDate.toLocaleString('ja-JP'),
+        });
+      } else {
+        // Token Rotationが無効な場合：永続的なトークン
+        responseData.token_info = {
+          is_permanent: true,
+        };
+
+        console.log('♾️ Token Rotationが無効：永続的なトークン（有効期限なし）');
+      }
+
+      // プロフィール情報が取得できた場合は追加
+      if (profileInfo.ok && profileInfo.data) {
+        const profileData = profileInfo.data as unknown as {
+          profile?: {
+            display_name?: string;
+            real_name?: string;
+            image_24?: string;
+            image_32?: string;
+            image_48?: string;
+            image_72?: string;
+            image_192?: string;
+            image_512?: string;
+            image_original?: string;
+          };
+        };
+
+        if (profileData.profile) {
+          responseData.user.profile = {
+            display_name: profileData.profile.display_name ?? userInfoData.user,
+            real_name: profileData.profile.real_name ?? userInfoData.user,
+            image_24: profileData.profile.image_24,
+            image_32: profileData.profile.image_32,
+            image_48: profileData.profile.image_48,
+            image_72: profileData.profile.image_72,
+            image_192: profileData.profile.image_192,
+            image_512: profileData.profile.image_512,
+            image_original: profileData.profile.image_original,
+          };
+        }
+      }
+
+      res.json(responseData);
+    } catch (error) {
+      console.error('ユーザー情報取得エラー:', error);
+      return res.status(500).json({
+        error: 'ユーザー情報取得に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    }
+  })
+);
 
 /**
  * 開発用：モックユーザー情報取得エンドポイント（トークン有効期限テスト用）
  * GET /auth/mock-user-info?type=permanent|expiring
  */
-router.get('/mock-user-info', async (req: Request, res: Response) => {
+router.get('/mock-user-info', (req: Request, res: Response): Response | void => {
   try {
     const { type = 'permanent' } = req.query;
 
@@ -506,7 +537,7 @@ router.get('/mock-user-info', async (req: Request, res: Response) => {
     res.json(baseUserData);
   } catch (error) {
     console.error('モックユーザー情報取得エラー:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'モックユーザー情報取得に失敗しました',
       message: error instanceof Error ? error.message : '不明なエラー',
     });
@@ -519,11 +550,10 @@ router.get('/mock-user-info', async (req: Request, res: Response) => {
  */
 router.get('/token-rotation-status', (req: Request, res: Response) => {
   const tokenRotationInfo = {
-    app_name: process.env.SLACK_APP_NAME || 'Slack出退勤打刻アプリ',
+    app_name: process.env.SLACK_APP_NAME ?? 'Slack出退勤打刻アプリ',
     token_rotation_info: {
       note: 'Token Rotationが有効な場合、auth.testのレスポンスにexpires_inが含まれます',
-      how_to_check:
-        '実際のSlack認証を行って/auth/user-infoエンドポイントでtoken_infoを確認してください',
+      how_to_check: '実際のSlack認証を行って/auth/user-infoエンドポイントでtoken_infoを確認してください',
       enable_token_rotation: {
         step1: 'https://api.slack.com/apps にアクセス',
         step2: 'アプリを選択 → OAuth & Permissions',

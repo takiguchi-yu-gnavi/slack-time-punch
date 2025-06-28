@@ -40,6 +40,6 @@
       "@server/*": ["packages/server/src/*"]
     }
   },
-  "include": [],
+  "include": ["packages/*/src/**/*"],
   "exclude": ["node_modules", "dist", "build", "coverage"]
 }

@@ -1,33 +1,23 @@
-import { AuthTokenInfo } from '@slack-time-punch/shared';
+import type { SlackUserProfile, UserInfoApiResponse } from '@slack-time-punch/shared';
 import { useCallback, useEffect, useState } from 'react';
+
 import { config } from '../config';
 
 // クライアント専用の型定義
-export type SlackUserProfile = {
-  id: string;
-  name: string;
-  team_id: string;
-  team_name: string;
-  profile?: {
-    display_name: string;
-    real_name: string;
-    image_24?: string;
-    image_32?: string;
-    image_48?: string;
-    image_72?: string;
-    image_192?: string;
-    image_512?: string;
-    image_original?: string;
-  };
-};
+export interface AuthTokenInfo {
+  userToken: string;
+  botToken: string;
+  teamId: string;
+  userId: string;
+}
 
-type AuthState = {
+interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-};
+}
 
-type UseSlackAuthReturn = {
+interface UseSlackAuthReturn {
   authState: AuthState;
   tokenInfo: AuthTokenInfo | null;
   userProfile: SlackUserProfile | null;
@@ -35,7 +25,7 @@ type UseSlackAuthReturn = {
   logout: () => void;
   setAuthError: (error: string | null) => void;
   setAuthLoading: (loading: boolean) => void;
-};
+}
 
 export const useSlackAuth = (): UseSlackAuthReturn => {
   const [authState, setAuthState] = useState<AuthState>({
@@ -70,7 +60,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   }, []);
 
   // 認証状態をチェック
-  const checkAuthState = useCallback(() => {
+  const checkAuthState = useCallback((): void => {
     console.log('=== 認証状態チェック開始 ===');
     console.log('現在のURL:', window.location.href);
     console.log('ローカルストレージの全項目数:', localStorage.length);
@@ -162,19 +152,19 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     }
 
     // ウィンドウにフォーカスが戻った時にも再チェック（認証後のリダイレクト対応）
-    const handleFocus = () => {
+    const handleFocus = (): void => {
       console.log('ウィンドウにフォーカスが戻りました。認証状態を再チェックします。');
       checkAuthState();
     };
 
     window.addEventListener('focus', handleFocus);
 
-    return () => {
+    return (): void => {
       window.removeEventListener('focus', handleFocus);
     };
   }, [testLocalStorage, checkAuthState]);
 
-  const login = useCallback(() => {
+  const login = useCallback((): void => {
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     // OAuth認証は直接リダイレクトで行う
@@ -189,11 +179,11 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   }, []);
 
   // ユーザー情報を取得
-  const fetchUserProfile = useCallback(async (userToken: string) => {
+  const fetchUserProfile = useCallback(async (userToken: string): Promise<void> => {
     try {
       console.log('🔍 ユーザープロフィール情報を取得中...');
       const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`);
-      const data = await response.json();
+      const data = (await response.json()) as UserInfoApiResponse;
 
       if (data.success && data.user) {
         console.log('✅ ユーザー情報取得成功:', {
@@ -203,7 +193,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
         });
         setUserProfile(data.user);
       } else {
-        console.error('❌ ユーザー情報取得失敗:', data.error);
+        console.error('❌ ユーザー情報取得失敗:', data.error ?? '不明なエラー');
       }
     } catch (error) {
       console.error('❌ ユーザー情報取得エラー:', error);
@@ -213,7 +203,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   // 認証完了時にユーザー情報も取得
   useEffect(() => {
     if (authState.isAuthenticated && tokenInfo?.userToken && !userProfile) {
-      fetchUserProfile(tokenInfo.userToken);
+      void fetchUserProfile(tokenInfo.userToken);
     }
   }, [authState.isAuthenticated, tokenInfo?.userToken, userProfile, fetchUserProfile]);
 

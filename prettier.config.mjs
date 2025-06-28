@@ -2,7 +2,7 @@
  * Prettier configuration for the Slack Time Punch monorepo
  * 全パッケージで共通のコードフォーマットルールを定義
  */
-module.exports = {
+export default {
   // 基本設定
   semi: true, // セミコロンを追加
   singleQuote: true, // シングルクォートを使用

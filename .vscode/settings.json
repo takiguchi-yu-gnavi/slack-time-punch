@@ -36,5 +36,11 @@
     "typescriptreact"
   ],
   "github.copilot.chat.codeGeneration.useInstructionFiles": true,
-  "cSpell.words": ["addgroup", "adduser", "healthcheck", "tauri"],
+  "cSpell.words": [
+    "addgroup",
+    "adduser",
+    "esbuild",
+    "healthcheck",
+    "tauri"
+  ],
 }

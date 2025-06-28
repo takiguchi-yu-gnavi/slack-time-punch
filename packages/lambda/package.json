@@ -1,0 +1,38 @@
+{
+  "name": "@slack-time-punch/lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for Slack Time Punch App",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\"",
+    "sam:clean": "rm -rf .aws-sam",
+    "sam:dev": "sam build && sam local start-api --port 3000 --env-vars env.json",
+    "sam:dev:debug": "sam build && sam local start-api --port 3000 --env-vars env.json --debug",
+    "sam:local:test": "curl http://localhost:3000/health"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "api-gateway",
+    "slack",
+    "oauth"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.134",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  slack-time-punch-lambda
+
+  AWS Lambda functions for Slack Time Punch App
+
+# パラメータ（ローカル開発用）
+Parameters:
+  Environment:
+    Type: String
+    Default: development
+    Description: Environment name (for local development)
+
+# グローバル設定
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs22.x
+    MemorySize: 128
+    # 環境変数は外部のenv.jsonから注入されます
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization'"
+      AllowOrigin: "'http://localhost:5173'"
+      AllowCredentials: true
+
+Resources:
+  # Lambda関数
+  SlackTimePunchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: slack-time-punch-local
+      CodeUri: ./
+      Handler: dist/index.handler
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # 環境変数のキーを定義（値は env.json から --env-vars オプションで注入されます）
+          NODE_ENV:
+          CLIENT_URL:
+          REDIRECT_URI:
+          SLACK_CLIENT_ID:
+          SLACK_CLIENT_SECRET:
+          SLACK_SCOPES:
+          SLACK_USER_SCOPES:
+          DISABLE_SSL_VERIFY:
+          ALLOW_SELF_SIGNED_CERTS:
+          NODE_TLS_REJECT_UNAUTHORIZED:
+      Events:
+        # API Gateway統合（シンプルバージョン）
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+    Metadata:
+      BuildMethod: nodejs22.x
+
+  # CloudWatch Logs
+  SlackTimePunchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/aws/lambda/slack-time-punch-local'
+      RetentionInDays: 7
+
+Outputs:
+  SlackTimePunchApi:
+    Description: "API Gateway endpoint URL for Slack Time Punch function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  SlackTimePunchFunction:
+    Description: "Slack Time Punch Lambda Function ARN"
+    Value: !GetAtt SlackTimePunchFunction.Arn
+
+  SlackTimePunchFunctionIamRole:
+    Description: "Implicit IAM Role created for Slack Time Punch function"
+    Value: !GetAtt SlackTimePunchFunctionRole.Arn

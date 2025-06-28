@@ -43,6 +43,7 @@ const fn = (...): ReturnType => { … }
 - **静的解析・整形**
   - ESLint の全ての `error`／`warn` を解消
   - Prettier でコードフォーマット
+  - 実装後は必ず lint エラーがないことを確認すること
 
 # プロジェクト構成
 

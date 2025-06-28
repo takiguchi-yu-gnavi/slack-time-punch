@@ -1,7 +1,18 @@
 {
-  "cSpell.words": [
-    "addgroup",
-    "adduser",
-    "healthcheck"
-  ]
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": ["source.addMissingImports", "source.fixAll.eslint"],
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "files.associations": { "*.json": "jsonc", ".env.*": "properties", "*.mdx": "markdown" },
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.useFlatConfig": true,
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "cSpell.words": ["addgroup", "adduser", "healthcheck", "tauri"]
 }

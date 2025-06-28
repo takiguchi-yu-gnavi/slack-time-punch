@@ -20,7 +20,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -70,7 +71,7 @@
 
 .permanentInfo {
   font-size: 1.1rem;
-  color: #90EE90;
+  color: #90ee90;
 }
 
 .permanentDescription {
@@ -80,7 +81,7 @@
 }
 
 .error {
-  color: #FFF;
+  color: #fff;
   background: rgba(255, 255, 255, 0.1);
   padding: 0.5rem;
   border-radius: 6px;

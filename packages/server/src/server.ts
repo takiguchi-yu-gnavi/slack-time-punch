@@ -19,20 +19,21 @@ const initializeSSLSettings = () => {
     NODE_ENV: process.env.NODE_ENV,
     DOCKER: process.env.DOCKER,
     NODE_TLS_REJECT_UNAUTHORIZED: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
-    ALLOW_SELF_SIGNED_CERTS: process.env.ALLOW_SELF_SIGNED_CERTS
+    ALLOW_SELF_SIGNED_CERTS: process.env.ALLOW_SELF_SIGNED_CERTS,
   });
 
   // 開発環境でSSL証明書エラーを回避するためのaxios設定
-  const shouldDisableSSLVerify = process.env.NODE_ENV !== 'production' || 
-                                 process.env.DISABLE_SSL_VERIFY === 'true' ||
-                                 process.env.DOCKER === 'true' ||
-                                 process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+  const shouldDisableSSLVerify =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.DISABLE_SSL_VERIFY === 'true' ||
+    process.env.DOCKER === 'true' ||
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
 
   if (shouldDisableSSLVerify) {
     const httpsAgent = new https.Agent({
       rejectUnauthorized: false,
       keepAlive: true,
-      timeout: 30000
+      timeout: 30000,
     });
     axios.defaults.httpsAgent = httpsAgent;
     console.log('🔧 SSL証明書検証を無効化しました');
@@ -57,16 +58,18 @@ class SlackOAuthApp {
 
   private initializeMiddleware(): void {
     // CORS設定 - クライアントアプリケーション分離対応
-    this.app.use(cors({
-      origin: [
-        hostConfig.CLIENT_URL, // メインクライアント
-        'http://localhost:5174', // 代替ポート
-        hostConfig.SERVER_URL  // 本番用（将来のホスティング）
-      ],
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
-    }));
+    this.app.use(
+      cors({
+        origin: [
+          hostConfig.CLIENT_URL, // メインクライアント
+          'http://localhost:5174', // 代替ポート
+          hostConfig.SERVER_URL, // 本番用（将来のホスティング）
+        ],
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+      })
+    );
 
     // JSONボディパーサー
     this.app.use(express.json());
@@ -85,19 +88,19 @@ class SlackOAuthApp {
       const clientUrl = hostConfig.CLIENT_URL;
       const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
       const redirectUrl = `${clientUrl}${queryString}`;
-      
+
       console.log(`🔗 クライアントにリダイレクト: ${redirectUrl}`);
       res.redirect(redirectUrl);
     });
 
     // ヘルスチェック
     this.app.get('/health', (req, res) => {
-      res.json({ 
-        status: 'OK', 
+      res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
         clientUrl: hostConfig.CLIENT_URL,
-        serverUrl: hostConfig.SERVER_URL
+        serverUrl: hostConfig.SERVER_URL,
       });
     });
 

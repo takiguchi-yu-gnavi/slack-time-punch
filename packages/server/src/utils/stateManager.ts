@@ -9,9 +9,9 @@ class StateManager {
     const state = randomBytes(32).toString('hex');
     const authState: AuthState = {
       state,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     this.states.set(state, authState);
     this.cleanExpiredStates();
     return state;

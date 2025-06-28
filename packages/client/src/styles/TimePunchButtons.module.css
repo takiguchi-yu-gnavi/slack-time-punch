@@ -79,7 +79,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
@@ -87,7 +89,7 @@
     flex-direction: column;
     gap: 0.8rem;
   }
-  
+
   .punchButton {
     min-width: auto;
     padding: 0.8rem 1.5rem;

@@ -1,18 +1,40 @@
 {
-  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": ["source.addMissingImports", "source.fixAll.eslint"],
+  "editor.codeActionsOnSave": {
+    "source.addMissingImports": "explicit",
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
   "editor.quickSuggestions": {
     "strings": "on"
   },
-  "files.associations": { "*.json": "jsonc", ".env.*": "properties", "*.mdx": "markdown" },
+  "files.associations": {
+    "*.json": "jsonc",
+    ".env.*": "properties",
+    "*.mdx": "markdown"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.DS_Store": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
   "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
+    "packages/**/*",
   ],
-  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   "github.copilot.chat.codeGeneration.useInstructionFiles": true,
-  "cSpell.words": ["addgroup", "adduser", "healthcheck", "tauri"]
+  "cSpell.words": ["addgroup", "adduser", "healthcheck", "tauri"],
 }

@@ -11,8 +11,8 @@ export const API_ENDPOINTS = {
     CHANNELS: '/auth/channels',
     POST_MESSAGE: '/auth/post-message',
     TOKEN_ROTATION_STATUS: '/auth/token-rotation-status',
-    MOCK_USER_INFO: '/auth/mock-user-info'
-  }
+    MOCK_USER_INFO: '/auth/mock-user-info',
+  },
 } as const;
 
 export const DEFAULT_SERVER_PORT = 3000;
@@ -23,9 +23,9 @@ export const getHostConfig = () => {
   // 完全なURLを直接使用
   const CLIENT_URL = process.env.CLIENT_URL || `http://localhost:${DEFAULT_CLIENT_PORT}`;
   const SERVER_URL = process.env.SERVER_URL || `http://localhost:${DEFAULT_SERVER_PORT}`;
-  
+
   return {
     CLIENT_URL,
-    SERVER_URL
+    SERVER_URL,
   };
 };

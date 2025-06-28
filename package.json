@@ -24,12 +24,37 @@
     "docker:server:up": "docker-compose -f docker-compose.server.yml up -d",
     "docker:server:down": "docker-compose -f docker-compose.server.yml down",
     "docker:server:logs": "docker-compose -f docker-compose.server.yml logs -f",
-    "docker:server:restart": "npm run docker:server:down && npm run docker:server:build && npm run docker:server:up"
+    "docker:server:restart": "npm run docker:server:down && npm run docker:server:build && npm run docker:server:up",
+    "lint": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\"",
+    "lint:fix": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "format": "prettier --write \"packages/**/src/**/*.{ts,tsx,js,jsx,json,css}\" \"packages/**/package.json\"",
+    "format:check": "prettier --check \"packages/**/src/**/*.{ts,tsx,js,jsx,json,css}\" \"packages/**/package.json\""
   },
-  "keywords": ["slack", "oauth", "typescript", "tauri", "desktop", "react", "vite", "express", "docker", "monorepo"],
+  "keywords": [
+    "slack",
+    "oauth",
+    "typescript",
+    "tauri",
+    "desktop",
+    "react",
+    "vite",
+    "express",
+    "docker",
+    "monorepo"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "concurrently": "^8.2.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
   }
 }

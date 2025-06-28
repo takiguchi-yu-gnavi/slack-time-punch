@@ -1,20 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
-interface UseCurrentTimeReturn {
-  currentTime: Date
-  formattedTime: string
-}
+type UseCurrentTimeReturn = {
+  currentTime: Date;
+  formattedTime: string;
+};
 
 export const useCurrentTime = (): UseCurrentTimeReturn => {
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
+      setCurrentTime(new Date());
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(timer);
+  }, []);
 
   const formattedTime = currentTime.toLocaleTimeString('ja-JP', {
     year: 'numeric',
@@ -22,11 +22,11 @@ export const useCurrentTime = (): UseCurrentTimeReturn => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
-  })
+    second: '2-digit',
+  });
 
   return {
     currentTime,
-    formattedTime
-  }
-}
+    formattedTime,
+  };
+};

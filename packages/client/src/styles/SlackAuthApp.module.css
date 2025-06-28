@@ -40,7 +40,7 @@
 .currentTime {
   font-size: 1.5rem;
   font-weight: 600;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .error {
@@ -57,7 +57,7 @@
 }
 
 .slackButton {
-  background: linear-gradient(135deg, #4267B2, #5A6ACF);
+  background: linear-gradient(135deg, #4267b2, #5a6acf);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -161,7 +161,7 @@
 }
 
 .punchButton {
-  background: linear-gradient(135deg, #4267B2, #5A6ACF);
+  background: linear-gradient(135deg, #4267b2, #5a6acf);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -318,37 +318,37 @@
     padding: 2rem;
     margin: 1rem;
   }
-  
+
   .title {
     font-size: 1.5rem;
   }
-  
+
   .description {
     font-size: 1rem;
   }
-  
+
   .currentTime {
     font-size: 1.2rem;
   }
-  
+
   .slackButton {
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
   }
-  
+
   .channelSelector {
     padding: 1rem;
   }
-  
+
   .channelLabel {
     font-size: 1rem;
   }
-  
+
   .channelSelect {
     padding: 0.7rem;
     font-size: 0.9rem;
   }
-  
+
   .channelError {
     flex-direction: column;
     align-items: stretch;

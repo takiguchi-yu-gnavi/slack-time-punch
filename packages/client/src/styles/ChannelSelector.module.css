@@ -58,7 +58,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .channelError {
@@ -94,16 +96,16 @@
   .channelSelector {
     padding: 1rem;
   }
-  
+
   .channelLabel {
     font-size: 1rem;
   }
-  
+
   .channelSelect {
     padding: 0.7rem;
     font-size: 0.9rem;
   }
-  
+
   .channelError {
     flex-direction: column;
     align-items: stretch;

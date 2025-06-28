@@ -35,6 +35,7 @@ export default tseslint.config(
   ...tseslint.configs.stylistic,
   ...tseslint.configs.stylisticTypeChecked,
   {
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.base.json', './packages/*/tsconfig.json'],

@@ -44,6 +44,7 @@
 - `channels:read` - チャンネル一覧の取得（オプション）
 
 **User Token Scopes**（必要に応じて）：
+
 - `identify` - ユーザーの基本情報取得
 
 ### 4. App Credentials の取得
@@ -74,6 +75,7 @@ PORT=3000
 - **最小設定**: `incoming-webhook`
 
 よく使用されるスコープ：
+
 - `chat:write` - メッセージの送信
 - `commands` - スラッシュコマンドの使用
 - `incoming-webhook` - Webhookでのメッセージ送信
@@ -142,6 +144,7 @@ REDIRECT_URI=https://yourdomain.com/auth/slack/callback
 ### 1. 開発環境でのテスト
 
 1. アプリを起動：
+
    ```bash
    npm run dev
    ```
@@ -203,3 +206,7 @@ REDIRECT_URI=https://yourdomain.com/auth/slack/callback
 - [Slack API Documentation](https://api.slack.com/authentication/oauth-v2)
 - [Slack Developer Community](https://slackcommunity.com/)
 - [Slack API Troubleshooting](https://api.slack.com/authentication/oauth-v2#troubleshooting)
+
+|大項目|中|
+|--|--||
+|テスト|品管|

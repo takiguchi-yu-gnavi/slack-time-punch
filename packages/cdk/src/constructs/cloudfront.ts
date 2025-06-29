@@ -18,6 +18,37 @@ export class CloudFront extends Construct {
 
     const { apiGateway, webAcl } = props;
 
+    // Create custom Origin Request Policy for API Gateway
+    const originRequestPolicy = new cloudfront.OriginRequestPolicy(this, 'ApiGatewayOriginRequestPolicy', {
+      originRequestPolicyName: 'slack-time-punch-api-origin-request-policy',
+      comment: 'Origin request policy for API Gateway to forward query strings and headers',
+      queryStringBehavior: cloudfront.OriginRequestQueryStringBehavior.all(),
+      headerBehavior: cloudfront.OriginRequestHeaderBehavior.allowList(
+        'Content-Type',
+        'X-Forwarded-For',
+        'X-Forwarded-Host',
+        'User-Agent',
+        'Accept',
+        'Accept-Language',
+        'Referer'
+      ),
+      cookieBehavior: cloudfront.OriginRequestCookieBehavior.none(),
+    });
+
+    // Create custom Cache Policy for API Gateway to handle Authorization header
+    const cachePolicy = new cloudfront.CachePolicy(this, 'ApiGatewayCachePolicy', {
+      cachePolicyName: 'slack-time-punch-api-cache-policy',
+      comment: 'Cache policy for API Gateway to handle Authorization header',
+      defaultTtl: cdk.Duration.seconds(0), // No caching
+      maxTtl: cdk.Duration.seconds(1),
+      minTtl: cdk.Duration.seconds(0),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
+      headerBehavior: cloudfront.CacheHeaderBehavior.allowList('Authorization'),
+      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
     // Create CloudFront Distribution
     this.distribution = new cloudfront.Distribution(this, 'SlackTimePunchDistribution', {
       comment: 'CloudFront distribution for Slack Time Punch API',
@@ -27,7 +58,8 @@ export class CloudFront extends Construct {
         }),
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // Disable caching for API calls
+        cachePolicy, // Use custom cache policy
+        originRequestPolicy, // Use custom origin request policy
       },
       priceClass: cloudfront.PriceClass.PRICE_CLASS_200,
       webAclId: webAcl.attrArn,

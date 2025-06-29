@@ -2,6 +2,7 @@ import type { SlackUserProfile, UserInfoApiResponse } from '@slack-time-punch/sh
 import { useCallback, useEffect, useState } from 'react';
 
 import { config } from '../config';
+import { httpClient } from '../utils/httpClient';
 
 // Tauri用の認証トークン情報
 export interface AuthTokenInfo {
@@ -57,19 +58,8 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   // ユーザー情報を取得
   const fetchUserProfile = useCallback(async (userToken: string): Promise<void> => {
     try {
-      const response = await fetch(`${config.SERVER_URL}/auth/user-info`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userToken }),
-      });
+      const result = await httpClient.post<UserInfoApiResponse>(`${config.SERVER_URL}/auth/user-info`, { userToken });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = (await response.json()) as UserInfoApiResponse;
       if (result.success && result.user) {
         setUserProfile(result.user);
       } else {

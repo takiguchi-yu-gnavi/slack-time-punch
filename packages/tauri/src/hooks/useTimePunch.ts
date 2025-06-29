@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 
 import { config } from '../config';
+import { httpClient } from '../utils/httpClient';
 
 interface PostMessageApiResponse {
   success?: boolean;
@@ -28,24 +29,17 @@ export const useTimePunch = (
       const message = type === 'in' ? '🟢 おはようございます。業務開始します。' : '🔴 お疲れさまです。業務終了します。';
 
       try {
-        const response = await fetch(`${config.SERVER_URL}/auth/post-message`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userToken,
-            channelId,
-            message,
-          }),
+        const result = await httpClient.post<PostMessageApiResponse>(`${config.SERVER_URL}/auth/post-message`, {
+          userToken,
+          channelId,
+          message,
         });
 
-        if (response.ok) {
+        if (result.success) {
           setLoading(false);
           console.log(`${type === 'in' ? '出勤' : '退勤'}打刻が完了しました`);
         } else {
-          const errorData = (await response.json()) as PostMessageApiResponse;
-          throw new Error(errorData.error ?? 'メッセージの投稿に失敗しました');
+          throw new Error(result.error ?? 'メッセージの投稿に失敗しました');
         }
       } catch (error) {
         setLoading(false);

@@ -42,6 +42,7 @@
     "devcmn",
     "esbuild",
     "healthcheck",
+    "icns",
     "takiguchi",
     "tauri",
     "VITE"

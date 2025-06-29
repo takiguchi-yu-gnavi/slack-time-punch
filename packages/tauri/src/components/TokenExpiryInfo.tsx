@@ -1,8 +1,9 @@
-import { type TokenInfoApiResponse } from '@slack-time-punch/shared';
+import type { TokenInfoApiResponse } from '@slack-time-punch/shared';
 import { useEffect, useState } from 'react';
 
 import { config } from '../config';
 import styles from '../styles/TokenExpiryInfo.module.css';
+import { httpClient } from '../utils/httpClient';
 
 interface TokenExpiryInfoProps {
   userToken: string | null;
@@ -34,8 +35,9 @@ const TokenExpiryInfo = ({ userToken }: TokenExpiryInfoProps): JSX.Element | nul
       setError(null);
 
       try {
-        const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`);
-        const data = (await response.json()) as TokenInfoApiResponse;
+        const data = await httpClient.get<TokenInfoApiResponse>(
+          `${config.SERVER_URL}/auth/user-info?token=${userToken}`
+        );
 
         if (data.success && data.token_info) {
           setExpiryInfo(data.token_info);

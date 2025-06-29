@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { config } from '../config';
+import { httpClient } from '../utils/httpClient';
 
 export interface SlackChannel {
   id: string;
@@ -38,8 +39,7 @@ export const useSlackChannels = (): UseSlackChannelsReturn => {
     setError(null);
 
     try {
-      const response = await fetch(`${config.SERVER_URL}/auth/channels?token=${userToken}`);
-      const data = (await response.json()) as ChannelsApiResponse;
+      const data = await httpClient.get<ChannelsApiResponse>(`${config.SERVER_URL}/auth/channels?token=${userToken}`);
 
       if (data.success && data.channels) {
         console.log('チャンネル取得成功:', `${data.channels.length}件`);

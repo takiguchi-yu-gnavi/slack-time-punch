@@ -100,3 +100,8 @@ Thumbs.db
 
 # Slack app credentials (if accidentally committed)
 slack-credentials.json
+
+# CDK specific
+cdk.out/
+cdk.context.json
+*.d.ts

@@ -8,6 +8,7 @@ node_modules/
 # Environment variables (contains secrets)
 .env
 env.json
+env.production.json
 
 # AWS SAM
 .aws-sam/

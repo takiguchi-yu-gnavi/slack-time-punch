@@ -1,0 +1,42 @@
+{
+  "name": "@slack-time-punch/cdk",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure for Slack Time Punch App",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rm -rf dist",
+    "cdk": "cdk",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff",
+    "synth": "cdk synth",
+    "bootstrap": "cdk bootstrap",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.{ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\""
+  },
+  "keywords": [
+    "aws",
+    "cdk",
+    "infrastructure",
+    "cloudfront",
+    "waf",
+    "api-gateway",
+    "lambda"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.140.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "aws-cdk": "^2.140.0",
+    "typescript": "^5.3.0"
+  }
+}

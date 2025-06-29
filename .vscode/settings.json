@@ -39,8 +39,11 @@
   "cSpell.words": [
     "addgroup",
     "adduser",
+    "devcmn",
     "esbuild",
     "healthcheck",
-    "tauri"
+    "takiguchi",
+    "tauri",
+    "VITE"
   ],
 }

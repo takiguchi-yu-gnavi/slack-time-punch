@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:client": "npm run dev --workspace=packages/client",
-    "build:client": "npm run build --workspace=packages/client",
-    "start:client": "npm start --workspace=packages/client",
-    "check:client": "cd packages/client && npm run build",
+    "dev:client": "npm run dev --workspace=packages/web",
+    "build:client": "npm run build --workspace=packages/web",
+    "start:client": "npm start --workspace=packages/web",
+    "check:client": "cd packages/web && npm run build",
     "dev:tauri": "npm run tauri:dev --workspace=packages/tauri",
     "build:tauri": "npm run tauri:build --workspace=packages/tauri",
     "sam:clean": "npm run sam:clean --workspace=packages/lambda",

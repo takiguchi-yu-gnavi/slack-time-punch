@@ -35,9 +35,11 @@
     // パス設定
     "baseUrl": ".",
     "paths": {
+      "@cdk/*": ["packages/cdk/src/*"],
+      "@lambda/*": ["packages/lambda/src/*"],
       "@shared/*": ["packages/shared/src/*"],
-      "@client/*": ["packages/client/src/*"],
-      "@server/*": ["packages/server/src/*"]
+      "@tauri/*": ["packages/tauri/src/*"],
+      "@web/*": ["packages/web/src/*"]
     }
   },
   "include": ["packages/*/src/**/*"],

@@ -1,7 +1,7 @@
 {
-  "name": "@slack-time-punch/client",
+  "name": "@slack-time-punch/web",
   "version": "1.0.0",
-  "description": "React.js Frontend for Slack Time Punch App (Tauri-ready)",
+  "description": "React.js Frontend for Slack Time Punch App",
   "type": "module",
   "scripts": {
     "dev": "vite",

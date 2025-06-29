@@ -388,8 +388,25 @@ npm run docker:server:up
 - `npm run docker:server:build`: Dockerイメージビルド
 - `npm run docker:server:up`: Dockerサーバー起動
 - `npm run docker:server:down`: Dockerサーバー停止
-- `npm run docker:server:logs`: Dockerログ確認
-- `npm run docker:server:restart`: Docker再起動（build→up）
+
+#### コード品質管理
+
+- `npm run lint`: 全パッケージのESLintチェック
+- `npm run lint:fix`: 全パッケージのESLint自動修正
+- `npm run format`: 全パッケージのPrettierフォーマット
+- `npm run format:check`: 全パッケージのPrettierフォーマットチェック
+
+**個別パッケージでの実行例:**
+
+```bash
+# CDKパッケージのリント
+cd packages/cdk && npm run lint
+
+# Tauriパッケージのフォーマット
+cd packages/tauri && npm run format
+```
+
+> 📖 詳細は [LINTING_AND_FORMATTING.md](./LINTING_AND_FORMATTING.md) を参照してください。
 
 ### 環境変数詳細
 

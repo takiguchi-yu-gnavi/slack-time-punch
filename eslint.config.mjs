@@ -23,6 +23,17 @@ export default tseslint.config(
       '**/webpack.config.*',
       '**/.eslintrc.*',
       '**/jest.config.*',
+      // 各パッケージの設定ファイル（ルート設定を継承するため除外）
+      '**/packages/*/eslint.config.mjs',
+      '**/packages/*/prettier.config.mjs',
+      // AWS CDK関連
+      '**/cdk.out/**',
+      '**/*.js.map',
+      // AWS Lambda関連
+      '**/.aws-sam/**',
+      // Tauri関連
+      '**/src-tauri/target/**',
+      '**/src-tauri/gen/**',
     ],
   },
 
@@ -68,9 +79,9 @@ export default tseslint.config(
     },
   },
 
-  // React用設定
+  // React用設定（tauri, webパッケージ）
   {
-    files: ['packages/client/**/*.{ts,tsx}'],
+    files: ['packages/tauri/**/*.{ts,tsx}', 'packages/web/**/*.{ts,tsx}'],
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
@@ -127,9 +138,9 @@ export default tseslint.config(
     },
   },
 
-  // Node.js/Express用設定
+  // AWS Lambda用设定
   {
-    files: ['packages/server/**/*.{ts,js}'],
+    files: ['packages/lambda/**/*.{ts,js}'],
     languageOptions: {
       globals: {
         process: 'readonly',
@@ -141,9 +152,29 @@ export default tseslint.config(
       },
     },
     rules: {
-      // Node.js特有のルール
+      // Lambda特有のルール
       'no-process-env': 'off',
-      'no-process-exit': 'warn',
+      'no-console': 'off', // Lambdaではログ出力を許可
+    },
+  },
+
+  // AWS CDK用設定
+  {
+    files: ['packages/cdk/**/*.{ts,js}'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        global: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      // CDK特有のルール
+      'no-process-env': 'off',
+      'no-console': 'off', // CDKでもログ出力を許可
     },
   },
 

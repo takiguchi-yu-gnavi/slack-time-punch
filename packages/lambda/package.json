@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts --fix",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\"",
     "sam:clean": "rm -rf .aws-sam",

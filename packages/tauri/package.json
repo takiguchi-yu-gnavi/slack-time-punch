@@ -12,8 +12,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "clean": "rm -rf dist src-tauri/target",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\""
   },

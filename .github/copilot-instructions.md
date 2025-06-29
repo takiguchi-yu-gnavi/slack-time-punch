@@ -72,3 +72,4 @@ const fn = (...): ReturnType => { … }
   - **Jest** を使用
   - 各パッケージにテストスクリプトを定義
   - テスト関数は `describe` と `test` を使用
+- `npm script` はルートディレクトリから実行することが前提

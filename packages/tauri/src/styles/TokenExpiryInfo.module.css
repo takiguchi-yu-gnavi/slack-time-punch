@@ -1,0 +1,68 @@
+.container {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e9ecef;
+}
+
+.tokenInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tokenStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permanent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.expiring {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.statusIcon {
+  font-size: 1.2rem;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e9ecef;
+  border-top: 2px solid #6c757d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.error {
+  color: #dc3545;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -11,14 +11,13 @@ import ChannelSelector from './ChannelSelector';
 import ErrorMessage from './ErrorMessage';
 import TimePunchButtons from './TimePunchButtons';
 import TokenExpiryInfo from './TokenExpiryInfo';
-import UserProfile from './UserProfile';
 
 /**
  * Tauri環境用のSlack認証アプリケーションコンポーネント
  * デスクトップアプリ特有の機能とUIを提供
  */
 const TauriSlackApp = (): JSX.Element => {
-  const { authState, tokenInfo, userProfile, login, logout, setAuthError, setAuthLoading } = useSlackAuth();
+  const { authState, tokenInfo, login, logout, setAuthError, setAuthLoading } = useSlackAuth();
   const {
     channels,
     selectedChannel,
@@ -160,8 +159,6 @@ const TauriSlackApp = (): JSX.Element => {
         </>
       ) : (
         <>
-          <UserProfile userProfile={userProfile} isLoading={authState.isAuthenticated && !userProfile} />
-
           <TokenExpiryInfo userToken={tokenInfo?.userToken ?? null} />
 
           <p className={styles.description}>

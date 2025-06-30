@@ -284,15 +284,6 @@ export class SlackAuthService {
   }
 
   /**
-   * ユーザー情報を取得
-   * @param userToken ユーザーアクセストークン
-   * @returns ユーザー情報
-   */
-  async getUserInfo(userToken: string): Promise<SlackApiResponse<{ user: SlackUser }>> {
-    return this.callSlackAPI(userToken, 'auth.test', 'GET');
-  }
-
-  /**
    * 詳細なユーザープロフィール情報を取得
    * @param userToken ユーザーアクセストークン
    * @param userId ユーザーID（省略時は認証ユーザー自身）

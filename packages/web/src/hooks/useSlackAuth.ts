@@ -1,4 +1,3 @@
-import type { SlackUserProfile, UserInfoApiResponse } from '@slack-time-punch/shared';
 import { useCallback, useEffect, useState } from 'react';
 
 import { config } from '../config';
@@ -20,7 +19,6 @@ interface AuthState {
 interface UseSlackAuthReturn {
   authState: AuthState;
   tokenInfo: AuthTokenInfo | null;
-  userProfile: SlackUserProfile | null;
   login: () => void;
   logout: () => void;
   setAuthError: (error: string | null) => void;
@@ -34,7 +32,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     error: null,
   });
   const [tokenInfo, setTokenInfo] = useState<AuthTokenInfo | null>(null);
-  const [userProfile, setUserProfile] = useState<SlackUserProfile | null>(null);
 
   // ローカルストレージのテスト関数
   const testLocalStorage = useCallback(() => {
@@ -174,38 +171,8 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   const logout = useCallback(() => {
     localStorage.removeItem('slackTokenInfo');
     setTokenInfo(null);
-    setUserProfile(null);
     setAuthState({ isAuthenticated: false, isLoading: false, error: null });
   }, []);
-
-  // ユーザー情報を取得
-  const fetchUserProfile = useCallback(async (userToken: string): Promise<void> => {
-    try {
-      console.log('🔍 ユーザープロフィール情報を取得中...');
-      const response = await fetch(`${config.SERVER_URL}/auth/user-info?token=${userToken}`);
-      const data = (await response.json()) as UserInfoApiResponse;
-
-      if (data.success && data.user) {
-        console.log('✅ ユーザー情報取得成功:', {
-          name: data.user.name,
-          hasProfile: !!data.user.profile,
-          hasImage: !!data.user.profile?.image_48,
-        });
-        setUserProfile(data.user);
-      } else {
-        console.error('❌ ユーザー情報取得失敗:', data.error ?? '不明なエラー');
-      }
-    } catch (error) {
-      console.error('❌ ユーザー情報取得エラー:', error);
-    }
-  }, []);
-
-  // 認証完了時にユーザー情報も取得
-  useEffect(() => {
-    if (authState.isAuthenticated && tokenInfo?.userToken && !userProfile) {
-      void fetchUserProfile(tokenInfo.userToken);
-    }
-  }, [authState.isAuthenticated, tokenInfo?.userToken, userProfile, fetchUserProfile]);
 
   const setAuthError = useCallback((error: string | null) => {
     setAuthState((prev) => ({ ...prev, error }));
@@ -218,7 +185,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   return {
     authState,
     tokenInfo,
-    userProfile,
     login,
     logout,
     setAuthError,

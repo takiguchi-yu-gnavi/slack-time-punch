@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "shared:build": "npm run build --workspace=packages/shared",
     "web:dev": "npm run dev --workspace=packages/web",
     "web:build": "npm run build --workspace=packages/web",
     "tauri:dev": "npm run tauri:dev --workspace=packages/tauri",

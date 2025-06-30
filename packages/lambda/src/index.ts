@@ -13,17 +13,14 @@ interface RouteHandler {
 
 const routes: RouteHandler[] = [
   // 認証関連
-  { method: 'GET', path: '/auth/slack', handler: authHandler.slackAuth },
-  { method: 'GET', path: '/auth/slack/callback', handler: authHandler.slackCallback },
-  { method: 'GET', path: '/auth/user-info', handler: authHandler.getUserInfo },
-  { method: 'POST', path: '/auth/user-info', handler: authHandler.getUserInfo }, // POSTメソッドも追加
-  { method: 'POST', path: '/auth/refresh', handler: authHandler.refreshToken },
-  { method: 'POST', path: '/auth/logout', handler: authHandler.logout },
-  { method: 'GET', path: '/auth/channels', handler: authHandler.getChannels },
-  { method: 'POST', path: '/auth/post-message', handler: authHandler.postMessage },
+  { method: 'GET', path: '/api/auth/slack', handler: authHandler.slackAuth },
+  { method: 'GET', path: '/api/auth/slack/callback', handler: authHandler.slackCallback },
+  { method: 'POST', path: '/api/auth/logout', handler: authHandler.logout },
+  { method: 'GET', path: '/api/auth/channels', handler: authHandler.getChannels },
+  { method: 'POST', path: '/api/auth/post-message', handler: authHandler.postMessage },
 
   // ヘルスチェック
-  { method: 'GET', path: '/health', handler: healthHandler.health },
+  { method: 'GET', path: '/api/health', handler: healthHandler.health },
 ];
 
 // ルートマッチング関数

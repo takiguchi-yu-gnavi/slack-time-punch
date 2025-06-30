@@ -1,11 +1,8 @@
-import type { SlackUserProfile, UserInfoApiResponse } from '@slack-time-punch/shared';
 import { useCallback, useEffect, useState } from 'react';
 
-import { config } from '../config';
 import { slackAuthService } from '../services/slackAuth';
 import type { AuthState, SlackAuthToken } from '../types/auth';
 import { logToRust } from '../utils/debug';
-import { httpClient } from '../utils/httpClient';
 
 // Tauri用の認証トークン情報
 export interface AuthTokenInfo {
@@ -18,7 +15,6 @@ export interface AuthTokenInfo {
 interface UseSlackAuthReturn {
   authState: AuthState;
   tokenInfo: AuthTokenInfo | null;
-  userProfile: SlackUserProfile | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   setAuthError: (error: string | null) => void;
@@ -33,7 +29,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     error: null,
   });
   const [tokenInfo, setTokenInfo] = useState<AuthTokenInfo | null>(null);
-  const [userProfile, setUserProfile] = useState<SlackUserProfile | null>(null);
 
   /**
    * 初期化時に保存されたトークンをチェック
@@ -152,56 +147,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     };
   }, []);
 
-  // ユーザー情報を取得
-  const fetchUserProfile = useCallback(async (userToken: string): Promise<void> => {
-    try {
-      console.log('👤 ユーザー情報取得開始...', {
-        userToken: `${userToken.slice(0, 20)}...`,
-        url: `${config.SERVER_URL}/auth/user-info`,
-      });
-
-      const result = await httpClient.post<UserInfoApiResponse>(`${config.SERVER_URL}/auth/user-info`, { userToken });
-
-      console.log('👤 ユーザー情報API レスポンス:', result);
-
-      if (result.success && result.user) {
-        console.log('✅ ユーザー情報取得成功:', result.user);
-        setUserProfile(result.user);
-      } else {
-        console.error('❌ ユーザー情報取得失敗:', result.error);
-        throw new Error(result.error ?? 'ユーザー情報の取得に失敗しました');
-      }
-    } catch (error) {
-      console.error('❌ ユーザー情報取得エラー:', error);
-      if (error instanceof Error) {
-        console.error('エラー詳細:', error.message);
-        console.error('エラースタック:', error.stack);
-      }
-      setAuthState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'ユーザー情報の取得に失敗しました',
-      }));
-    }
-  }, []);
-
-  // トークン情報が更新された時にユーザー情報を取得
-  useEffect(() => {
-    console.log('🔄 トークン情報useEffect実行:', {
-      hasTokenInfo: !!tokenInfo,
-      userToken: tokenInfo?.userToken ? `${tokenInfo.userToken.slice(0, 20)}...` : 'none',
-      hasUserProfile: !!userProfile,
-    });
-
-    if (tokenInfo?.userToken && !userProfile) {
-      console.log('📞 ユーザー情報取得を開始します...');
-      void fetchUserProfile(tokenInfo.userToken);
-    } else if (!tokenInfo?.userToken) {
-      console.log('⚠️ トークンが見つかりません');
-    } else if (userProfile) {
-      console.log('ℹ️ ユーザー情報は既に取得済みです');
-    }
-  }, [tokenInfo, userProfile, fetchUserProfile]);
-
   /**
    * 認証を開始する
    */
@@ -241,7 +186,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
         error: null,
       });
       setTokenInfo(null);
-      setUserProfile(null);
     } catch (error) {
       console.error('ログアウトエラー:', error);
       // ログアウトエラーは状態をリセットするが、エラーは設定しない
@@ -252,7 +196,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
         error: null,
       });
       setTokenInfo(null);
-      setUserProfile(null);
     }
   }, []);
 
@@ -267,7 +210,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   return {
     authState,
     tokenInfo,
-    userProfile,
     login,
     logout,
     setAuthError,

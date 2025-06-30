@@ -4,29 +4,6 @@ import { createResponse, handleError } from '../common';
 import { SlackAuthService } from '../services/slackAuth';
 import { StateManager } from '../utils/stateManager';
 
-// 型定義
-interface UserResponseData {
-  success: boolean;
-  user: {
-    id: string;
-    name: string;
-    team_id: string;
-    team_name: string;
-    display_name?: string;
-    image_url?: string;
-    profile?: Record<string, unknown>;
-  };
-  token_info?: {
-    expires_in_seconds?: number;
-    expires_in_hours?: number;
-    expires_in_days?: number;
-    expiration_date?: string;
-    expiration_date_local?: string;
-    remaining_time?: string;
-    is_permanent: boolean;
-  };
-}
-
 // StateManagerのインスタンス
 const stateManager = new StateManager();
 
@@ -38,7 +15,7 @@ const getSlackAuthService = (): SlackAuthService => {
 export const authHandler = {
   /**
    * OAuth認証開始エンドポイント
-   * GET /auth/slack
+   * GET /api/auth/slack
    */
   slackAuth: (_event: APIGatewayProxyEvent, _context: Context): APIGatewayProxyResult => {
     try {
@@ -73,7 +50,7 @@ export const authHandler = {
 
   /**
    * OAuth認証コールバックエンドポイント
-   * GET /auth/slack/callback
+   * GET /api/auth/slack/callback
    */
   slackCallback: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
     try {
@@ -203,222 +180,8 @@ export const authHandler = {
   },
 
   /**
-   * ユーザー情報取得エンドポイント
-   * GET /auth/user-info?token=<user_token>
-   * POST /auth/user-info (body: { userToken: <user_token> })
-   */
-  getUserInfo: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
-    try {
-      console.log('👤 ユーザー情報取得リクエスト', {
-        method: event.httpMethod,
-        queryParams: event.queryStringParameters,
-        body: event.body,
-      });
-
-      let token: string | undefined;
-
-      // GETメソッドの場合：クエリパラメータから取得
-      if (event.httpMethod === 'GET') {
-        token = event.queryStringParameters?.token;
-      }
-      // POSTメソッドの場合：リクエストボディから取得
-      else if (event.httpMethod === 'POST') {
-        try {
-          const body = event.body ? (JSON.parse(event.body) as Record<string, unknown>) : {};
-          token = typeof body.userToken === 'string' ? body.userToken : undefined;
-        } catch (parseError) {
-          console.error('リクエストボディの解析エラー:', parseError);
-          return createResponse(400, {
-            error: 'リクエストボディの形式が不正です',
-          });
-        }
-      }
-
-      if (!token) {
-        return createResponse(400, {
-          error: 'トークンが必要です',
-          message:
-            event.httpMethod === 'GET'
-              ? 'クエリパラメータ "token" が不足しています'
-              : 'リクエストボディ "userToken" が不足しています',
-        });
-      }
-
-      console.log('🔑 取得したトークン:', `${token.slice(0, 20)}...`);
-
-      // Slack認証サービスのインスタンスを取得
-      const slackAuth = getSlackAuthService();
-
-      // ユーザー情報を取得
-      const [userInfoResponse, userProfileResponse] = await Promise.all([
-        slackAuth.getUserInfo(token),
-        slackAuth.getUserProfile(token).catch(() => null), // プロフィール取得失敗時はnull
-      ]);
-
-      console.log('👤 Slack APIレスポンス:', {
-        userInfoOk: userInfoResponse.ok,
-        userInfoError: userInfoResponse.error,
-        hasProfile: !!userProfileResponse,
-      });
-
-      if (!userInfoResponse.ok) {
-        console.error('ユーザー情報取得エラー:', userInfoResponse.error);
-        return createResponse(401, {
-          error: 'トークンが無効です',
-          slackError: userInfoResponse.error,
-        });
-      }
-
-      // レスポンスデータの構築
-      const userProfile = userProfileResponse?.profile as Record<string, unknown> | undefined;
-      const responseData: UserResponseData = {
-        success: true,
-        user: {
-          id: (userInfoResponse.user_id as string) ?? '',
-          name: (userInfoResponse.user as string) ?? '',
-          team_id: (userInfoResponse.team_id as string) ?? '',
-          team_name: (userInfoResponse.team as string) ?? '',
-        },
-      };
-
-      // オプショナルプロパティを条件付きで追加
-      if (userProfile?.display_name) {
-        responseData.user.display_name = userProfile.display_name as string;
-      }
-      if (userProfile?.image_512 ?? userProfile?.image_192) {
-        responseData.user.image_url = (userProfile.image_512 as string) ?? (userProfile.image_192 as string);
-      }
-      if (userProfile) {
-        responseData.user.profile = userProfile;
-      }
-
-      // トークン有効期限情報があれば追加
-      if ('expires_in' in userInfoResponse && userInfoResponse.expires_in) {
-        const expiresIn = userInfoResponse.expires_in as number;
-        const expirationDate = new Date(Date.now() + expiresIn * 1000);
-
-        responseData.token_info = {
-          expires_in_seconds: expiresIn,
-          expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
-          expires_in_days: Math.round((expiresIn / 86400) * 100) / 100,
-          expiration_date: expirationDate.toISOString(),
-          expiration_date_local: expirationDate.toLocaleString('ja-JP'),
-          remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
-          is_permanent: false,
-        };
-      } else {
-        responseData.token_info = {
-          is_permanent: true,
-        };
-      }
-
-      console.log('✅ ユーザー情報取得成功:', {
-        userId: responseData.user.id,
-        userName: responseData.user.name,
-        teamId: responseData.user.team_id,
-        hasPermanentToken: responseData.token_info?.is_permanent,
-      });
-
-      return createResponse(200, responseData as unknown as Record<string, unknown>);
-    } catch (error) {
-      console.error('ユーザー情報取得エラー:', error);
-      return handleError(error, 'ユーザー情報取得');
-    }
-  },
-
-  /**
-   * トークンリフレッシュエンドポイント
-   * POST /auth/refresh
-   */
-  refreshToken: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
-    try {
-      console.log('🔄 トークンリフレッシュリクエスト');
-
-      // リクエストボディの解析
-      let requestBody: Record<string, unknown>;
-      try {
-        requestBody = event.body ? (JSON.parse(event.body) as Record<string, unknown>) : {};
-      } catch {
-        return createResponse(400, {
-          error: 'Invalid JSON in request body',
-          message: 'リクエストボディのJSONが無効です',
-        });
-      }
-
-      const { token } = requestBody as { token?: string };
-
-      if (!token) {
-        return createResponse(400, {
-          error: 'トークンが必要です',
-          message: 'リクエストボディに "token" が必要です',
-        });
-      }
-
-      console.log('トークンリフレッシュ詳細:', {
-        hasToken: !!token,
-        tokenLength: typeof token === 'string' ? token.length : 0,
-      });
-
-      // Slack認証サービスのインスタンスを取得
-      const slackAuth = getSlackAuthService();
-
-      // トークンの有効性を確認
-      const userInfoResponse = await slackAuth.getUserInfo(token);
-
-      if (!userInfoResponse.ok) {
-        console.error('トークン検証エラー:', userInfoResponse.error);
-        return createResponse(401, {
-          error: 'トークンが無効です',
-          message: '再認証が必要です',
-          slackError: userInfoResponse.error,
-        });
-      }
-
-      // Slack OAuth v2では自動的なリフレッシュトークンはありません
-      // 現在のトークンが有効であれば、そのまま返します
-      const responseData: Record<string, unknown> = {
-        success: true,
-        message: 'トークンは有効です',
-        user: {
-          id: (userInfoResponse.user_id as string) ?? '',
-          name: (userInfoResponse.user as string) ?? '',
-          team_id: (userInfoResponse.team_id as string) ?? '',
-          team_name: (userInfoResponse.team as string) ?? '',
-        },
-      };
-
-      // トークン有効期限情報があれば追加
-      if ('expires_in' in userInfoResponse && userInfoResponse.expires_in) {
-        const expiresIn = userInfoResponse.expires_in as number;
-        const expirationDate = new Date(Date.now() + expiresIn * 1000);
-
-        responseData.token_info = {
-          expires_in_seconds: expiresIn,
-          expires_in_hours: Math.round((expiresIn / 3600) * 100) / 100,
-          expires_in_days: Math.round((expiresIn / 86400) * 100) / 100,
-          expiration_date: expirationDate.toISOString(),
-          expiration_date_local: expirationDate.toLocaleString('ja-JP'),
-          remaining_time: `${Math.floor(expiresIn / 86400)}日 ${Math.floor((expiresIn % 86400) / 3600)}時間`,
-          is_permanent: false,
-        };
-      } else {
-        responseData.token_info = {
-          is_permanent: true,
-        };
-      }
-
-      console.log('✅ トークンリフレッシュ完了');
-
-      return createResponse(200, responseData);
-    } catch (error) {
-      console.error('トークンリフレッシュエラー:', error);
-      return handleError(error, 'トークンリフレッシュ');
-    }
-  },
-
-  /**
    * ログアウトエンドポイント
-   * POST /auth/logout
+   * POST /api/auth/logout
    */
   logout: (_event: APIGatewayProxyEvent, _context: Context): APIGatewayProxyResult => {
     console.log('🚪 ログアウトリクエスト');
@@ -438,7 +201,7 @@ export const authHandler = {
 
   /**
    * チャンネル一覧取得エンドポイント
-   * GET /auth/channels?token=<user_token>
+   * GET /api/auth/channels?token=<user_token>
    */
   getChannels: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
     try {
@@ -517,7 +280,7 @@ export const authHandler = {
 
   /**
    * メッセージ投稿エンドポイント
-   * POST /auth/post-message
+   * POST /api/auth/post-message
    */
   postMessage: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
     try {

@@ -104,43 +104,6 @@
   }
 }
 
-.features {
-  display: grid;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.feature {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  text-align: left;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 10px;
-  transition: transform 0.2s ease;
-}
-
-.feature:hover {
-  transform: translateY(-2px);
-}
-
-.featureIcon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.featureText h3 {
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.featureText p {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
 .footer {
   margin-top: 2rem;
   padding-top: 2rem;

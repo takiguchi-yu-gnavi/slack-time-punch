@@ -9,11 +9,9 @@ import styles from '../styles/SlackAuthApp.module.css';
 import ChannelSelector from './ChannelSelector';
 import ErrorMessage from './ErrorMessage';
 import TimePunchButtons from './TimePunchButtons';
-import TokenExpiryInfo from './TokenExpiryInfo';
-import UserProfile from './UserProfile';
 
 function SlackAuthApp(): JSX.Element {
-  const { authState, tokenInfo, userProfile, login, logout, setAuthError, setAuthLoading } = useSlackAuth();
+  const { authState, tokenInfo, login, logout, setAuthError, setAuthLoading } = useSlackAuth();
   const {
     channels,
     selectedChannel,
@@ -57,18 +55,9 @@ function SlackAuthApp(): JSX.Element {
 
       {!authState.isAuthenticated ? (
         <>
-          <p className={styles.description}>
-            Slackと連携して簡単に出退勤管理を行えます。
-            <br />
-            Slack認証を行って、出退勤の打刻を始めましょう！
-          </p>
-
           <div className={styles.timeDisplay}>
             <div className={styles.currentTime}>{formattedTime}</div>
           </div>
-
-          {/* 開発環境でのテスト機能 */}
-          <TokenExpiryInfo userToken={null} />
 
           {authState.error && <ErrorMessage error={authState.error} onDismiss={() => setAuthError(null)} />}
 
@@ -87,37 +76,9 @@ function SlackAuthApp(): JSX.Element {
               )}
             </button>
           </div>
-
-          <div className={styles.features}>
-            <div className={styles.feature}>
-              <div className={styles.featureIcon}>🕘</div>
-              <div className={styles.featureText}>
-                <h3>出勤打刻</h3>
-                <p>ワンクリックで出勤時間を記録</p>
-              </div>
-            </div>
-            <div className={styles.feature}>
-              <div className={styles.featureIcon}>🏠</div>
-              <div className={styles.featureText}>
-                <h3>退勤打刻</h3>
-                <p>簡単操作で退勤時間を記録</p>
-              </div>
-            </div>
-            <div className={styles.feature}>
-              <div className={styles.featureIcon}>📊</div>
-              <div className={styles.featureText}>
-                <h3>履歴管理</h3>
-                <p>出退勤履歴をSlackで確認</p>
-              </div>
-            </div>
-          </div>
         </>
       ) : (
         <>
-          <UserProfile userProfile={userProfile} isLoading={authState.isAuthenticated && !userProfile} />
-
-          <TokenExpiryInfo userToken={tokenInfo?.userToken ?? null} />
-
           <p className={styles.description}>
             認証が完了しました！
             <br />

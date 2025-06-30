@@ -46,7 +46,7 @@ export const useSlackChannels = (): UseSlackChannelsReturn => {
         setChannels(data.channels);
 
         // デフォルトでgeneralチャンネルを選択
-        const generalChannel = data.channels.find((ch: SlackChannel) => ch.name === 'x_tk');
+        const generalChannel = data.channels.find((ch: SlackChannel) => ch.name === 'org_restaurant_service_dev');
         if (generalChannel) {
           setSelectedChannel(generalChannel.id);
         } else if (data.channels.length > 0) {

@@ -52,11 +52,16 @@ export class SlackAuthService {
       // Tauri v2のディープリンクプラグインを使用
       const unlisten = await onOpenUrl((urls: string[]) => {
         console.log('Deep Link受信:', urls);
+        console.log('受信したURL数:', urls.length);
 
         for (const url of urls) {
+          console.log('処理中のURL:', url);
           if (url.startsWith('slack-time-punch://auth/callback')) {
+            console.log('認証コールバックURLを検出:', url);
             this.handleAuthCallback(url, onAuthResult);
             break;
+          } else {
+            console.log('認証コールバックではないURL:', url);
           }
         }
       });
@@ -80,8 +85,11 @@ export class SlackAuthService {
     onAuthResult: (success: boolean, token?: SlackAuthToken, error?: string) => void
   ): void => {
     try {
+      console.log('処理中のURL:', url);
       const urlObj = new URL(url);
       const searchParams = urlObj.searchParams;
+
+      console.log('受信したパラメーター:', Object.fromEntries(searchParams.entries()));
 
       // エラーがある場合
       if (searchParams.has('error')) {
@@ -91,7 +99,55 @@ export class SlackAuthService {
         return;
       }
 
-      // トークンを取得
+      // auth=successの場合の処理
+      const authStatus = searchParams.get('auth');
+      if (authStatus === 'success') {
+        // tokenパラメーターからJSONを取得
+        const tokenParam = searchParams.get('token');
+        if (!tokenParam) {
+          console.error('tokenパラメーターが見つかりません');
+          onAuthResult(false, undefined, 'tokenパラメーターが見つかりません');
+          return;
+        }
+
+        try {
+          // Base64デコードしてJSONパースを試行
+          const decodedToken = atob(tokenParam);
+          const tokenData = JSON.parse(decodedToken) as Record<string, unknown>;
+
+          console.log('デコードされたトークンデータ:', tokenData);
+
+          // 型安全なアクセスのためのヘルパー関数
+          const getString = (key: string): string => {
+            const value = tokenData[key];
+            return typeof value === 'string' ? value : '';
+          };
+
+          // トークンオブジェクトを作成
+          const token: SlackAuthToken = {
+            access_token: getString('userToken') || getString('access_token'),
+            scope: getString('scope'),
+            team_id: getString('teamId') || getString('team_id'),
+            team_name: getString('teamName') || getString('team_name'),
+            user_id: getString('userId') || getString('user_id'),
+            user_name: getString('userName') || getString('user_name'),
+          };
+
+          console.log('🎉 認証成功！トークンを取得しました:', token);
+          console.log('📞 onAuthResultコールバックを呼び出し中...');
+          onAuthResult(true, token);
+          console.log('✅ onAuthResultコールバック呼び出し完了');
+          return;
+        } catch (parseError) {
+          console.error('❌ トークンのパース失敗:', parseError);
+          console.log('📞 onAuthResultエラーコールバックを呼び出し中...');
+          onAuthResult(false, undefined, 'トークンの解析に失敗しました');
+          console.log('✅ onAuthResultエラーコールバック呼び出し完了');
+          return;
+        }
+      }
+
+      // 従来の形式での処理（フォールバック）
       const accessToken = searchParams.get('access_token');
       const scope = searchParams.get('scope');
       const teamId = searchParams.get('team_id');
@@ -100,8 +156,10 @@ export class SlackAuthService {
       const userName = searchParams.get('user_name');
 
       if (!accessToken) {
-        console.error('アクセストークンが見つかりません');
+        console.error('❌ アクセストークンが見つかりません');
+        console.log('📞 onAuthResultエラーコールバックを呼び出し中...');
         onAuthResult(false, undefined, 'アクセストークンが見つかりません');
+        console.log('✅ onAuthResultエラーコールバック呼び出し完了');
         return;
       }
 
@@ -115,12 +173,16 @@ export class SlackAuthService {
         user_name: userName ?? '',
       };
 
-      console.log('認証成功！トークンを取得しました');
+      console.log('🎉 フォールバック形式で認証成功！トークンを取得しました');
+      console.log('📞 onAuthResultコールバックを呼び出し中...');
       onAuthResult(true, token);
+      console.log('✅ onAuthResultコールバック呼び出し完了');
     } catch (error) {
-      console.error('認証コールバック処理エラー:', error);
+      console.error('❌ 認証コールバック処理エラー:', error);
       const message = error instanceof Error ? error.message : '不明なエラー';
+      console.log('📞 onAuthResultエラーコールバックを呼び出し中...');
       onAuthResult(false, undefined, `認証コールバック処理エラー: ${message}`);
+      console.log('✅ onAuthResultエラーコールバック呼び出し完了');
     }
   };
 
@@ -175,17 +237,34 @@ export class SlackAuthService {
    * トークンの有効性をチェックする
    */
   isTokenValid = (token: SlackAuthToken): boolean => {
+    console.log('🔍 トークンの有効性をチェック中...', token);
+
     if (!token.access_token) {
+      console.log('❌ アクセストークンが見つかりません');
       return false;
     }
 
     // 有効期限がある場合はチェック
     if (token.expires_at) {
       const now = Date.now() / 1000;
-      return now < token.expires_at;
+      const isValid = now < token.expires_at;
+      console.log(`⏰ 有効期限チェック: now=${now}, expires_at=${token.expires_at}, valid=${isValid}`);
+      return isValid;
     }
 
+    console.log('✅ トークンは有効です（有効期限の設定なし）');
     return true;
+  };
+
+  /**
+   * デバッグ用：Deep Linkコールバックを手動でテストする
+   */
+  testDeepLinkCallback = (
+    url: string,
+    onAuthResult: (success: boolean, token?: SlackAuthToken, error?: string) => void
+  ): void => {
+    console.log('🧪 デバッグ用Deep Linkテスト開始:', url);
+    this.handleAuthCallback(url, onAuthResult);
   };
 }
 

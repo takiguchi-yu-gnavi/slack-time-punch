@@ -4,6 +4,7 @@ import { useCurrentTime } from '../hooks/useCurrentTime';
 import { useSlackAuth } from '../hooks/useSlackAuth';
 import { useSlackChannels } from '../hooks/useSlackChannels';
 import { useTimePunch } from '../hooks/useTimePunch';
+import { slackAuthService } from '../services/slackAuth';
 import styles from '../styles/SlackAuthApp.module.css';
 
 import ChannelSelector from './ChannelSelector';
@@ -32,10 +33,16 @@ const TauriSlackApp = (): JSX.Element => {
 
   // 認証状態が変わった時にチャンネルを取得
   useEffect(() => {
-    if (authState.isAuthenticated && tokenInfo?.userToken && channels.length === 0) {
+    if (authState.isAuthenticated && tokenInfo?.userToken && channels.length === 0 && !isLoadingChannels) {
+      console.log('📡 チャンネル一覧を取得中...', {
+        isAuthenticated: authState.isAuthenticated,
+        hasToken: !!tokenInfo?.userToken,
+        channelsCount: channels.length,
+        isLoading: isLoadingChannels,
+      });
       void fetchChannels(tokenInfo.userToken);
     }
-  }, [authState.isAuthenticated, tokenInfo?.userToken, channels.length, fetchChannels]);
+  }, [authState.isAuthenticated, tokenInfo?.userToken, channels.length, isLoadingChannels, fetchChannels]);
 
   const handleLogin = async (): Promise<void> => {
     await login();
@@ -56,6 +63,17 @@ const TauriSlackApp = (): JSX.Element => {
     if (tokenInfo?.userToken) {
       void fetchChannels(tokenInfo.userToken);
     }
+  };
+
+  // デバッグ用：Deep Linkコールバックをテスト
+  const testDeepLinkCallback = (): void => {
+    const testUrl =
+      'slack-time-punch://auth/callback?auth=success&token=eyJ1c2VyVG9rZW4iOiJ4b3hwLTEwMTM0NDgxNzg3OTAtODU5MDg4NjI2NzQxLTkxMDA2NzMxNjg1MzQtNWJmNGE5Y2U1ZGFiZWYxZWI4NTAwNDQ4YzIxMWNmODMiLCJib3RUb2tlbiI6InhveGItMTAxMzQ0ODE3ODc5MC05MTAwNjczMzExMzk4LVJuRW85c1RBcHJaaG9wZFZpRkVIbzk2diIsInRlYW1JZCI6IlQwMTBERDY1OFA4IiwidXNlcklkIjoiV1I5MkxKTVQ3In0';
+    console.log('🧪 テスト用Deep Linkコールバックを実行中...');
+
+    slackAuthService.testDeepLinkCallback(testUrl, (success, token, error) => {
+      console.log('🧪 テスト結果:', { success, token, error });
+    });
   };
 
   return (
@@ -97,6 +115,15 @@ const TauriSlackApp = (): JSX.Element => {
                   Slackで認証
                 </>
               )}
+            </button>
+
+            {/* デバッグ用テストボタン */}
+            <button
+              onClick={testDeepLinkCallback}
+              className={styles.slackButton}
+              style={{ backgroundColor: '#28a745', marginTop: '10px' }}
+            >
+              🧪 Deep Linkテスト
             </button>
           </div>
 

@@ -8,6 +8,8 @@ export const httpClient = {
    */
   get: async <T = unknown>(url: string, options?: { headers?: Record<string, string> }): Promise<T> => {
     try {
+      console.log('🌐 HTTP GET リクエスト開始:', { url, options });
+
       const requestOptions: RequestInit = {
         method: 'GET',
       };
@@ -18,13 +20,24 @@ export const httpClient = {
 
       const response = await fetch(url, requestOptions);
 
+      console.log('🌐 HTTP GET レスポンス:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('🌐 HTTP GET エラーレスポンス:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
-      return (await response.json()) as T;
+      const jsonData = (await response.json()) as T;
+      console.log('🌐 HTTP GET 成功:', jsonData);
+      return jsonData;
     } catch (error) {
-      console.error('HTTP GET error:', error);
+      console.error('🌐 HTTP GET error:', error);
       if (error instanceof Error) {
         throw error;
       }
@@ -41,6 +54,8 @@ export const httpClient = {
     options?: { headers?: Record<string, string> }
   ): Promise<T> => {
     try {
+      console.log('🌐 HTTP POST リクエスト開始:', { url, data, options });
+
       const requestOptions: RequestInit = {
         method: 'POST',
         headers: {
@@ -55,13 +70,24 @@ export const httpClient = {
 
       const response = await fetch(url, requestOptions);
 
+      console.log('🌐 HTTP POST レスポンス:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('🌐 HTTP POST エラーレスポンス:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
-      return (await response.json()) as T;
+      const jsonData = (await response.json()) as T;
+      console.log('🌐 HTTP POST 成功:', jsonData);
+      return jsonData;
     } catch (error) {
-      console.error('HTTP POST error:', error);
+      console.error('🌐 HTTP POST error:', error);
       if (error instanceof Error) {
         throw error;
       }

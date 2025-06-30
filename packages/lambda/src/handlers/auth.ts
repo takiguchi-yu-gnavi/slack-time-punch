@@ -205,19 +205,46 @@ export const authHandler = {
   /**
    * ユーザー情報取得エンドポイント
    * GET /auth/user-info?token=<user_token>
+   * POST /auth/user-info (body: { userToken: <user_token> })
    */
   getUserInfo: async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
     try {
-      console.log('👤 ユーザー情報取得リクエスト');
+      console.log('👤 ユーザー情報取得リクエスト', {
+        method: event.httpMethod,
+        queryParams: event.queryStringParameters,
+        body: event.body,
+      });
 
-      const { token } = event.queryStringParameters ?? {};
+      let token: string | undefined;
+
+      // GETメソッドの場合：クエリパラメータから取得
+      if (event.httpMethod === 'GET') {
+        token = event.queryStringParameters?.token;
+      }
+      // POSTメソッドの場合：リクエストボディから取得
+      else if (event.httpMethod === 'POST') {
+        try {
+          const body = event.body ? (JSON.parse(event.body) as Record<string, unknown>) : {};
+          token = typeof body.userToken === 'string' ? body.userToken : undefined;
+        } catch (parseError) {
+          console.error('リクエストボディの解析エラー:', parseError);
+          return createResponse(400, {
+            error: 'リクエストボディの形式が不正です',
+          });
+        }
+      }
 
       if (!token) {
         return createResponse(400, {
           error: 'トークンが必要です',
-          message: 'クエリパラメータ "token" が不足しています',
+          message:
+            event.httpMethod === 'GET'
+              ? 'クエリパラメータ "token" が不足しています'
+              : 'リクエストボディ "userToken" が不足しています',
         });
       }
+
+      console.log('🔑 取得したトークン:', `${token.slice(0, 20)}...`);
 
       // Slack認証サービスのインスタンスを取得
       const slackAuth = getSlackAuthService();
@@ -227,6 +254,12 @@ export const authHandler = {
         slackAuth.getUserInfo(token),
         slackAuth.getUserProfile(token).catch(() => null), // プロフィール取得失敗時はnull
       ]);
+
+      console.log('👤 Slack APIレスポンス:', {
+        userInfoOk: userInfoResponse.ok,
+        userInfoError: userInfoResponse.error,
+        hasProfile: !!userProfileResponse,
+      });
 
       if (!userInfoResponse.ok) {
         console.error('ユーザー情報取得エラー:', userInfoResponse.error);

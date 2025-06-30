@@ -44,6 +44,8 @@
     "esbuild",
     "healthcheck",
     "icns",
+    "maximizable",
+    "minimizable",
     "reqwest",
     "rlib",
     "serde",

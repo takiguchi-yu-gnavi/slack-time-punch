@@ -2,11 +2,13 @@ import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 
 export interface CloudFrontProps {
   apiGateway: apigateway.RestApi;
+  webBucket: s3.Bucket;
   webAcl: wafv2.CfnWebACL;
 }
 
@@ -16,7 +18,17 @@ export class CloudFront extends Construct {
   constructor(scope: Construct, id: string, props: CloudFrontProps) {
     super(scope, id);
 
-    const { apiGateway, webAcl } = props;
+    const { apiGateway, webBucket, webAcl } = props;
+
+    // Origin Access Control for S3 (OAC - 新しい推奨方式)
+    const originAccessControl = new cloudfront.S3OriginAccessControl(this, 'OAC', {
+      description: 'OAC for Slack Time Punch Web Bucket',
+    });
+
+    // S3 Origin with OAC
+    const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(webBucket, {
+      originAccessControl,
+    });
 
     // Create custom Origin Request Policy for API Gateway
     const originRequestPolicy = new cloudfront.OriginRequestPolicy(this, 'ApiGatewayOriginRequestPolicy', {
@@ -35,32 +47,44 @@ export class CloudFront extends Construct {
       cookieBehavior: cloudfront.OriginRequestCookieBehavior.none(),
     });
 
-    // Create custom Cache Policy for API Gateway to handle Authorization header
-    const cachePolicy = new cloudfront.CachePolicy(this, 'ApiGatewayCachePolicy', {
-      cachePolicyName: 'slack-time-punch-api-cache-policy',
-      comment: 'Cache policy for API Gateway to handle Authorization header',
-      defaultTtl: cdk.Duration.seconds(0), // No caching
-      maxTtl: cdk.Duration.seconds(1),
-      minTtl: cdk.Duration.seconds(0),
-      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
-      headerBehavior: cloudfront.CacheHeaderBehavior.allowList('Authorization'),
-      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
-      enableAcceptEncodingGzip: true,
-      enableAcceptEncodingBrotli: true,
-    });
-
     // Create CloudFront Distribution
     this.distribution = new cloudfront.Distribution(this, 'SlackTimePunchDistribution', {
-      comment: 'CloudFront distribution for Slack Time Punch API',
+      comment: 'CloudFront distribution for Slack Time Punch Web App and API',
       defaultBehavior: {
-        origin: new origins.RestApiOrigin(apiGateway, {
-          originPath: '/prod', // API Gateway stage
-        }),
-        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+        // デフォルトは静的ファイル (S3) を配信 - キャッシュ無効化
+        origin: s3Origin,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy, // Use custom cache policy
-        originRequestPolicy, // Use custom origin request policy
+        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // AWS管理のキャッシュ無効化ポリシー
+        compress: true,
       },
+      additionalBehaviors: {
+        // API パスは API Gateway に転送 - キャッシュ完全無効化
+        '/api/*': {
+          origin: new origins.RestApiOrigin(apiGateway, {
+            originPath: '/prod', // API Gateway stage
+          }),
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // AWS管理のキャッシュ無効化ポリシー
+          originRequestPolicy, // API 用のオリジンリクエストポリシー
+        },
+      },
+      // SPA のルーティング対応: 404 エラーを index.html にリダイレクト
+      errorResponses: [
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+          ttl: cdk.Duration.minutes(5),
+        },
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+          ttl: cdk.Duration.minutes(5),
+        },
+      ],
       priceClass: cloudfront.PriceClass.PRICE_CLASS_200,
       webAclId: webAcl.attrArn,
     });

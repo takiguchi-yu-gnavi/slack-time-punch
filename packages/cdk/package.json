@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "build:web": "cd ../web && npm run build",
+    "predeploy": "npm run build:web && npm run build",
     "watch": "tsc -w",
     "clean": "rm -rf dist",
     "cdk": "cdk",

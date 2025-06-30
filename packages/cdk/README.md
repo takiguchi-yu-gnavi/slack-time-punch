@@ -5,7 +5,7 @@
 ## アーキテクチャ
 
 ```
-Internet → WAF → CloudFront → API Gateway → Lambda
+Internet → WAF → CloudFront → S3 (Web App) / API Gateway → Lambda
 ```
 
 ### 構成コンポーネント
@@ -14,9 +14,16 @@ Internet → WAF → CloudFront → API Gateway → Lambda
   - IP制限: `163.116.128.0/17` のみを許可
   - AWS Managed Rules でセキュリティ強化
 - **CloudFront**
-  - API Gateway をオリジンとするCDN
+  - S3 (Web Assets) と API Gateway を両方オリジンとするCDN
+  - デフォルトは S3 の静的ファイルを配信
+  - `/api/*` パスは API Gateway にルーティング
   - WAF をアタッチしてセキュリティ強化
   - HTTPSリダイレクト強制
+  - SPA 対応（404 → index.html リダイレクト）
+- **S3 Bucket**
+  - Web アプリの静的アセット配信
+  - `packages/web/dist` の内容をデプロイ
+  - CloudFront 経由でのみアクセス可能
 - **API Gateway**
   - RESTful API エンドポイント
   - Lambda プロキシ統合
@@ -88,16 +95,27 @@ npx cdk bootstrap --profile your-profile \
    --qualifier devcmn
 ```
 
-### Lambda ビルド
+### Lambda と Web ビルド
 
-CDKをデプロイする前に、Lambdaコードをビルドしてください：
+CDKをデプロイする前に、Lambda と Web アプリをビルドしてください：
 
 ```bash
+# Lambda ビルド
 cd packages/lambda
+npm run build
+
+# Web アプリビルド
+cd packages/web
 npm run build
 ```
 
 ### デプロイ
+
+```bash
+# CDK のデプロイ（Web アプリの自動ビルド + CDK デプロイ）
+cd packages/cdk
+npm run deploy  # 内部で predeploy スクリプトが実行され、Web アプリのビルドも自動実行される
+```
 
 ```bash
 cd packages/cdk

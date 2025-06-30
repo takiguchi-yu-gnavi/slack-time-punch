@@ -25,7 +25,7 @@ export const useTimePunch = (
       setLoading(true);
       setError(null);
 
-      const message = type === 'in' ? '🟢 おはようございます。業務開始します。' : '🔴 お疲れさまです。業務終了します。';
+      const message = type === 'in' ? 'おはようございます。業務開始します。' : 'お疲れさまです。業務終了します。';
 
       try {
         const response = await fetch(`${config.SERVER_URL}/auth/post-message`, {

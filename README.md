@@ -1,23 +1,24 @@
 # Slack 出退勤打刻アプリ
 
-TypeScriptで実装されたSlack連携出退勤打刻システムです。サーバー/クライアント分離構成で、将来的なTauriデスクトップアプリ化に対応しています。
+TypeScriptで実装されたSlack連携出退勤打刻システムです。AWS Lambda + CDK構成でサーバーレス化し、将来的なTauriデスクトップアプリ化にも対応しています。
 
 ## 🏗️ アーキテクチャ
 
-### モノレポ構成（Server/Client分離）
+### モノレポ構成（サーバーレス・アーキテクチャ）
 
 ```
 packages/
 ├── shared/     # 共有型定義・ユーティリティ
-├── lambda/     # AWS Lambda関数
-├── cdk/        # AWS CDK構成
-├── client/     # React.js フロントエンド (Vite)
+├── lambda/     # AWS Lambda関数（API Gateway + Lambda）
+├── cdk/        # AWS CDK構成（CloudFront + WAF + API Gateway + Lambda）
+├── web/        # React.js フロントエンド (Vite)
 └── tauri/      # Tauriデスクトップアプリケーション
 ```
 
-- **完全分離**: サーバーとクライアントが独立
+- **サーバーレス**: AWS Lambda + API Gatewayによる高可用性・低コスト運用
 - **型安全性**: 共有型定義で一貫性を保証
 - **Tauri対応**: クライアントアプリのデスクトップ化準備完了
+- **CDK Infrastructure as Code**: AWS リソースをコードで管理
 - **環境変数管理**: 完全なURLベースの設定で簡素化
 
 ## 🚀 機能
@@ -31,15 +32,17 @@ packages/
 - **⏳ トークン有効期限管理**: トークンの有効期限表示と期限切れ警告
 - **🎨 モダンUI**: レスポンシブでユーザーフレンドリーなインターフェース（Vite + React）
 - **📝 TypeScript**: 型安全性とコード品質の確保
-- **🐳 Docker対応**: Dockerコンテナでの簡単デプロイ
+- **☁️ サーバーレス**: AWS Lambda + API Gatewayによる高可用性・低コスト運用
+- **� CDK Infrastructure**: Infrastructure as Codeでリソース管理
 - **🔧 環境変数管理**: 完全なURLベースの設定で開発・本番環境の切り替えが簡単
 
 ## 📋 前提条件
 
-- Node.js (v18以上推奨)
+- Node.js (v22以上推奨)
 - npm または yarn
 - Slackアプリの作成とクライアント情報
-- Docker（オプション：コンテナ実行時）
+- AWS SAM CLI（ローカル開発時）
+- AWS CDK（デプロイ時）
 
 ## 🛠️ セットアップ
 
@@ -49,43 +52,57 @@ packages/
 2. "Create New App" → "From scratch"を選択
 3. アプリ名とワークスペースを指定
 4. "OAuth & Permissions"セクションで以下を設定：
-   - **Redirect URLs**: `http://localhost:3000/auth/slack/callback`
+   - **Redirect URLs**: `http://localhost:3000/api/auth/slack/callback`
    - **Scopes**: 必要に応じて以下のスコープを追加
-     - `commands`
-     - `incoming-webhook`
-     - `chat:write`
+     - Bot Token Scopes: `channels:read`, `groups:read`
+     - User Token Scopes: `identify`, `channels:read`, `groups:read`, `chat:write`
 
 ### 2. 環境変数の設定
 
-`.env`ファイルを作成し、Slackアプリの情報を設定：
+AWS Lambda用の環境変数ファイルを作成：
 
 ```bash
-cp .env.example .env
+# Lambda用の環境変数
+cp packages/lambda/env.example.json packages/lambda/env.json
 ```
 
-`.env`ファイルを編集：
+`packages/lambda/env.json`ファイルを編集：
+
+```json
+{
+  "Parameters": {
+    "SLACK_CLIENT_ID": "your_slack_client_id_here",
+    "SLACK_CLIENT_SECRET": "your_slack_client_secret_here",
+    "NODE_ENV": "development",
+    "CLIENT_URL": "http://localhost:5173",
+    "REDIRECT_URI": "http://localhost:3000/api/auth/slack/callback",
+    "SLACK_SCOPES": "channels:read,groups:read",
+    "SLACK_USER_SCOPES": "identify,channels:read,groups:read,chat:write"
+  }
+}
+```
+
+Web用の環境変数も設定：
+
+```bash
+# Web用の環境変数
+cp packages/web/.env.example packages/web/.env
+```
+
+`packages/web/.env`ファイルを編集：
 
 ```env
-# Slack OAuth App環境変数
-SLACK_CLIENT_ID=your_slack_client_id_here
-SLACK_CLIENT_SECRET=your_slack_client_secret_here
-REDIRECT_URI=http://localhost:3000/auth/slack/callback
-SLACK_SCOPES=channels:read,groups:read
-SLACK_USER_SCOPES=identify,channels:read,groups:read,chat:write
-
-# URL設定（開発環境）
-CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:3000
-
-# クライアント側用（VITEプレフィックス必須）
+# Web用環境変数（VITEプレフィックス必須）
 VITE_SERVER_URL=http://localhost:3000
+VITE_LAMBDA_AUTH_URL=http://localhost:3000/api
 ```
 
 **環境変数の説明**:
 
-- **完全URL設定**: `CLIENT_URL`、`SERVER_URL`、`VITE_SERVER_URL`で簡単設定
+- **AWS Lambda設定**: JSON形式でLambda環境変数を管理
+- **API Gateway**: エンドポイントは `/api` プレフィックス付き
+- **完全URL設定**: 開発・本番でURLを変更するだけ
 - **本番環境**: これらのURLを本番サーバーのURLに変更するだけ
-- **Docker**: コンテナ実行時は自動的にDocker用設定が適用
 
 ### 3. 依存関係のインストール
 
@@ -98,45 +115,62 @@ npm install
 #### 🔥 開発モード（推奨）
 
 ```bash
-# サーバー・クライアント同時起動
-npm run dev
+# 共有ライブラリのビルド
+npm run shared:build
+
+# AWS SAM Lambda関数をローカル起動（API: http://localhost:3000）
+npm run sam:dev
+
+# 別のターミナルでWebクライアント起動（UI: http://localhost:5173）
+npm run web:dev
 ```
 
 #### 🚀 個別起動
 
 ```bash
-# サーバーのみ（API: http://localhost:3000）
-npm run dev:server
+# Lambda関数のみ（API: http://localhost:3000）
+npm run sam:dev
 
-# クライアントのみ（UI: http://localhost:5173）
-npm run dev:client
+# デバッグモード（詳細ログ付き）
+npm run sam:dev:debug
+
+# Webクライアントのみ（UI: http://localhost:5173）
+npm run web:dev
+
+# Tauriデスクトップアプリ（デスクトップアプリ）
+npm run tauri:dev
 ```
 
-#### 🐳 Docker実行
+#### 🏗️ CDKデプロイ
 
 ```bash
-# Dockerサーバー起動
-npm run docker:server:up
+# CDKプロジェクトのビルド
+npm run cdk:build
 
-# ログ確認
-npm run docker:server:logs
+# AWSへのデプロイ
+npm run cdk:deploy
 
-# 停止
-npm run docker:server:down
+# 差分確認
+npm run cdk:diff
+
+# 削除
+npm run cdk:destroy
 ```
 
 #### 📦 本番ビルド
 
 ```bash
-# 全体ビルド
-npm run build
+# 共有ライブラリビルド
+npm run shared:build
 
-# 個別ビルド
-npm run build:server
-npm run build:client
+# Webクライアントビルド
+npm run web:build
 
-# 本番起動
-npm run start:server
+# CDKビルド
+npm run cdk:build
+
+# Tauriアプリビルド
+npm run tauri:build
 ```
 
 ## 🚀 クイックスタート
@@ -150,48 +184,53 @@ npm install
 ### 2. 環境設定
 
 ```bash
-cp .env.example .env
-# .envファイルを編集してSlackアプリ情報を設定
+# Lambda用環境変数
+cp packages/lambda/env.example.json packages/lambda/env.json
+# packages/lambda/env.jsonファイルを編集してSlackアプリ情報を設定
+
+# Web用環境変数
+cp packages/web/.env.example packages/web/.env
+# packages/web/.envファイルを編集
 ```
 
 ### 3. アプリケーション起動
 
-#### 開発モード（推奨）
+#### AWS SAM開発モード（推奨）
 
 ```bash
-# サーバー・クライアント同時起動
-npm run dev
-```
+# 共有ライブラリビルド
+npm run shared:build
 
-#### Docker実行
+# Lambda関数をローカル起動
+npm run sam:dev
 
-```bash
-# Dockerサーバー起動
-npm run docker:server:up
+# 別ターミナルでWebクライアント起動
+npm run web:dev
 ```
 
 ### 4. アクセス
 
 - **フロントエンド**: http://localhost:5173
 - **API サーバー**: http://localhost:3000
-- **Slack認証**: http://localhost:3000/auth/slack
+- **Slack認証**: http://localhost:3000/api/auth/slack
 
 ## 📡 API エンドポイント
 
 ### 認証関連
 
-- **GET `/`**: メインページ（認証UI）
-- **GET `/auth/slack`**: OAuth認証開始
-- **GET `/auth/slack/callback`**: OAuth認証コールバック
-- **GET `/auth/status`**: 認証状態確認
-- **GET `/health`**: ヘルスチェック
+- **GET `/`**: メインページ（クライアントアプリにリダイレクト）
+- **GET `/api/auth/slack`**: OAuth認証開始
+- **GET `/api/auth/slack/callback`**: OAuth認証コールバック
+- **GET `/api/health`**: ヘルスチェック
 
 ### Slack API連携
 
-- **GET `/auth/channels?token=<user_token>`**: チャンネル一覧取得
-- **POST `/auth/post-message`**: 個人ユーザーとしてメッセージ投稿
-- **GET `/auth/user-info?token=<user_token>`**: ユーザー情報・トークン有効期限取得
-- **GET `/auth/token-rotation-status`**: Token Rotation設定状況確認
+- **GET `/api/auth/channels?token=<user_token>`**: チャンネル一覧取得
+- **POST `/api/auth/post-message`**: 個人ユーザーとしてメッセージ投稿
+- **GET `/api/auth/user-info?token=<user_token>`**: ユーザー情報・トークン有効期限取得
+- **POST `/api/auth/user-info`**: ユーザー情報取得（POSTボディ経由）
+- **POST `/api/auth/refresh`**: トークンリフレッシュ
+- **POST `/api/auth/logout`**: ログアウト
 
 ### トークン有効期限機能
 
@@ -244,9 +283,9 @@ npm run docker:server:up
 
 ### OAuth フロー
 
-1. **認証開始**: ユーザーが `/auth/slack` にアクセス
+1. **認証開始**: ユーザーが `/api/auth/slack` にアクセス
 2. **Slack認証**: Slackの認証ページにリダイレクト
-3. **コールバック**: 認証後 `/auth/slack/callback` に戻る
+3. **コールバック**: 認証後 `/api/auth/slack/callback` に戻る
 4. **トークン取得**: 認証コードをアクセストークンに交換
 
 ## 📱 使用方法
@@ -285,22 +324,29 @@ npm run docker:server:up
 
 ## 🎨 使用技術
 
-### Backend (Server)
+### Backend (AWS Lambda)
 
-- **Runtime**: Node.js, TypeScript
-- **Framework**: Express.js
+- **Runtime**: Node.js 22.x, TypeScript
+- **Framework**: AWS Lambda + API Gateway
 - **HTTP Client**: Axios
-- **CORS**: cors
 - **Environment**: dotenv
-- **Development**: ts-node-dev
+- **Development**: AWS SAM CLI
+- **Infrastructure**: AWS CDK
 
-### Frontend (Client)
+### Frontend (Web Client)
 
 - **Framework**: React 18
 - **Build Tool**: Vite
 - **Language**: TypeScript
 - **UI**: CSS Modules
 - **Future Ready**: Tauri対応準備完了
+
+### Desktop (Tauri)
+
+- **Framework**: Tauri 2.x
+- **Frontend**: React 18 + CSS Modules
+- **Backend**: Rust
+- **Platform**: macOS（現在対応）
 
 ### Shared
 
@@ -310,8 +356,8 @@ npm run docker:server:up
 
 ### DevOps
 
-- **Containerization**: Docker, Docker Compose
-- **Development**: Concurrently（並行実行）
+- **Infrastructure**: AWS CDK (CloudFront + WAF + API Gateway + Lambda)
+- **Development Tools**: ESLint, Prettier, TypeScript
 - **Monorepo**: npm workspaces
 
 ## 📚 プロジェクト構成
@@ -324,40 +370,55 @@ npm run docker:server:up
 │   │   │   ├── index.ts          # 共有関数・設定
 │   │   │   └── types.ts          # 共有型定義
 │   │   └── package.json
-│   ├── server/                    # Express.js APIサーバー
+│   ├── lambda/                    # AWS Lambda関数
 │   │   ├── src/
-│   │   │   ├── server.ts         # メインサーバーファイル
-│   │   │   ├── routes/
-│   │   │   │   └── auth.ts       # 認証ルート
+│   │   │   ├── index.ts          # メインLambdaハンドラー
+│   │   │   ├── common.ts         # 共通ユーティリティ
+│   │   │   ├── handlers/
+│   │   │   │   ├── auth.ts       # 認証ハンドラー
+│   │   │   │   └── health.ts     # ヘルスチェックハンドラー
 │   │   │   ├── services/
 │   │   │   │   └── slackAuth.ts  # Slack認証サービス
+│   │   │   ├── types/
+│   │   │   │   └── shared.ts     # Lambda型定義
 │   │   │   └── utils/
 │   │   │       └── stateManager.ts # セキュリティ状態管理
+│   │   ├── template.yaml         # AWS SAMテンプレート
+│   │   ├── env.json              # Lambda環境変数
 │   │   └── package.json
-│   └── client/                    # React.js フロントエンド
+│   ├── cdk/                       # AWS CDK Infrastructure
+│   │   ├── src/
+│   │   │   └── slack-time-punch-stack.ts # CDKスタック定義
+│   │   ├── cdk.json              # CDK設定
+│   │   └── package.json
+│   ├── web/                       # React.js フロントエンド
+│   │   ├── src/
+│   │   │   ├── main.tsx          # エントリーポイント
+│   │   │   ├── App.tsx           # メインアプリ
+│   │   │   ├── config/
+│   │   │   │   └── index.ts      # 設定管理
+│   │   │   ├── components/       # Reactコンポーネント
+│   │   │   ├── hooks/            # カスタムフック
+│   │   │   └── styles/           # CSS Modules
+│   │   ├── public/
+│   │   ├── vite.config.ts        # Vite設定
+│   │   └── package.json
+│   └── tauri/                     # Tauriデスクトップアプリ
 │       ├── src/
 │       │   ├── main.tsx          # エントリーポイント
 │       │   ├── App.tsx           # メインアプリ
-│       │   ├── config/
-│       │   │   └── index.ts      # 設定管理
-│       │   ├── components/       # Reactコンポーネント
-│       │   ├── hooks/            # カスタムフック
-│       │   ├── styles/           # CSS Modules
-│       │   └── types/            # フロントエンド型定義
+│       │   └── components/       # Reactコンポーネント
+│       ├── src-tauri/            # Rustバックエンド
+│       │   ├── src/
+│       │   │   └── main.rs       # Tauriメイン
+│       │   ├── Cargo.toml        # Rust依存関係
+│       │   └── tauri.conf.json   # Tauri設定
 │       ├── public/
-│       ├── vite.config.ts        # Vite設定
 │       └── package.json
-├── docs/                          # ドキュメント
-│   ├── ARCHITECTURE.md           # アーキテクチャ詳細
-│   ├── DOCKER.md                 # Docker実行手順
-│   ├── SLACK_SETUP.md            # Slack設定手順
-│   ├── SLACK_TOKEN_EXPIRATION.md # トークン期限管理
-│   └── TROUBLESHOOTING.md        # トラブルシューティング
-├── .env                          # 環境変数（local）
-├── .env.example                  # 環境変数テンプレート
-├── docker-compose.server.yml     # Dockerサーバー設定
-├── Dockerfile.server             # Dockerイメージ設定
-└── package.json                  # ワークスペース設定
+├── tsconfig.base.json             # ルートTypeScript設定
+├── eslint.config.mjs              # ESLint設定
+├── prettier.config.mjs            # Prettier設定
+└── package.json                   # ワークスペース設定
 ```
 
 ## 🔧 開発
@@ -366,71 +427,75 @@ npm run docker:server:up
 
 #### ワークスペース全体
 
-- `npm run dev`: サーバー・クライアント同時起動（開発モード）
-- `npm run build`: 全体ビルド
-- `npm run clean`: 全体クリーンアップ
-- `npm run debug`: デバッグモード（クライアントの起動を遅延）
-
-#### サーバー関連
-
-- `npm run dev:server`: サーバーのみ開発モード
-- `npm run build:server`: サーバーのみビルド
-- `npm run start:server`: サーバーのみ本番起動
-
-#### クライアント関連
-
-- `npm run dev:client`: クライアントのみ開発モード
-- `npm run build:client`: クライアントのみビルド
-- `npm run start:client`: クライアントのみプレビュー
-
-#### Docker関連
-
-- `npm run docker:server:build`: Dockerイメージビルド
-- `npm run docker:server:up`: Dockerサーバー起動
-- `npm run docker:server:down`: Dockerサーバー停止
-
-#### コード品質管理
-
+- `npm run shared:build`: 共有ライブラリのビルド
 - `npm run lint`: 全パッケージのESLintチェック
 - `npm run lint:fix`: 全パッケージのESLint自動修正
 - `npm run format`: 全パッケージのPrettierフォーマット
 - `npm run format:check`: 全パッケージのPrettierフォーマットチェック
 
+#### Lambda関連
+
+- `npm run sam:dev`: AWS SAMでローカル開発サーバー起動
+- `npm run sam:dev:debug`: デバッグモードでローカル開発サーバー起動
+- `npm run sam:local:test`: ローカルAPIのヘルスチェック
+- `npm run sam:clean`: SAMビルドファイルクリーンアップ
+
+#### Web関連
+
+- `npm run web:dev`: Webクライアント開発モード
+- `npm run web:build`: Webクライアントビルド
+
+#### Tauri関連
+
+- `npm run tauri:dev`: Tauriデスクトップアプリ開発モード
+- `npm run tauri:build`: Tauriデスクトップアプリビルド
+
+#### CDK関連
+
+- `npm run cdk:build`: CDKプロジェクトビルド
+- `npm run cdk:synth`: CloudFormationテンプレート生成
+- `npm run cdk:deploy`: AWSへのデプロイ
+- `npm run cdk:diff`: 現在のスタックとの差分表示
+- `npm run cdk:destroy`: スタックの削除
+
 **個別パッケージでの実行例:**
 
 ```bash
-# CDKパッケージのリント
-cd packages/cdk && npm run lint
+# Lambda関数のリント
+cd packages/lambda && npm run lint
 
-# Tauriパッケージのフォーマット
-cd packages/tauri && npm run format
+# Web用のフォーマット
+cd packages/web && npm run format
 ```
 
-> 📖 詳細は [LINTING_AND_FORMATTING.md](./LINTING_AND_FORMATTING.md) を参照してください。
-
 ### 環境変数詳細
+
+#### Lambda環境変数 (`packages/lambda/env.json`)
 
 | 変数名              | 説明                                            | デフォルト                                    | 必須 |
 | ------------------- | ----------------------------------------------- | --------------------------------------------- | ---- |
 | **Slack OAuth設定** |
 | SLACK_CLIENT_ID     | SlackアプリのClient ID                          | -                                             | ✅   |
 | SLACK_CLIENT_SECRET | SlackアプリのClient Secret                      | -                                             | ✅   |
-| REDIRECT_URI        | OAuth認証後のリダイレクトURL                    | http://localhost:3000/auth/slack/callback     | ✅   |
+| REDIRECT_URI        | OAuth認証後のリダイレクトURL                    | http://localhost:3000/api/auth/slack/callback | ✅   |
 | SLACK_SCOPES        | Slackで要求するボットスコープ（カンマ区切り）   | channels:read,groups:read                     | ✅   |
 | SLACK_USER_SCOPES   | Slackで要求するユーザースコープ（カンマ区切り） | identify,channels:read,groups:read,chat:write | ✅   |
-| **URL設定**         |
-| CLIENT_URL          | クライアントアプリのベースURL                   | http://localhost:5173                         | -    |
-| SERVER_URL          | サーバーAPIのベースURL                          | http://localhost:3000                         | -    |
-| VITE_SERVER_URL     | クライアント側でサーバーにアクセスするURL       | http://localhost:3000                         | -    |
 | **実行環境**        |
 | NODE_ENV            | 実行環境                                        | development                                   | -    |
-| PORT                | サーバーポート（Docker用）                      | 3000                                          | -    |
+| CLIENT_URL          | クライアントアプリのベースURL                   | http://localhost:5173                         | -    |
+
+#### Web環境変数 (`packages/web/.env`)
+
+| 変数名               | 説明                     | デフォルト                | 必須 |
+| -------------------- | ------------------------ | ------------------------- | ---- |
+| VITE_SERVER_URL      | サーバーAPIのベースURL   | http://localhost:3000     | ✅   |
+| VITE_LAMBDA_AUTH_URL | Lambda認証APIのベースURL | http://localhost:3000/api | -    |
 
 **URL設定の特徴**:
 
-- **完全URL**: ホスト・ポートを個別設定する必要がない
+- **API Gateway**: エンドポイントは `/api` プレフィックス付き
 - **環境切り替え**: 開発・本番でURLを変更するだけ
-- **Docker対応**: コンテナ実行時は自動的に適切な設定が適用
+- **AWS統合**: CDKデプロイ時は自動的に適切な設定が適用
 
 ## ⚠️ 注意事項
 
@@ -438,6 +503,8 @@ cd packages/tauri && npm run format
 2. **Client Secret**は絶対に公開しないでください
 3. **適切なスコープ**のみを要求してください
 4. **アクセストークン**は安全に保存してください
+5. **AWS SAM CLI**が正しくインストールされていることを確認してください
+6. **Lambda環境変数**はJSON形式で管理されます
 
 ## 🤝 貢献
 
@@ -457,37 +524,43 @@ cd packages/tauri && npm run format
 
 ### 📖 ドキュメント
 
-- **`docs/SLACK_SETUP.md`**: Slackアプリの詳細な設定手順
-- **`docs/DOCKER.md`**: Docker実行の詳細手順
-- **`docs/TROUBLESHOOTING.md`**: 一般的な問題と解決方法
-- **`docs/ARCHITECTURE.md`**: システムアーキテクチャの詳細
-- **`docs/SLACK_TOKEN_EXPIRATION.md`**: トークン有効期限管理の詳細
+- **`SLACK_SETUP.md`**: Slackアプリの詳細な設定手順
+- **`packages/lambda/README.md`**: Lambda関数の詳細ドキュメント
+- **`packages/cdk/README.md`**: CDKデプロイメントガイド
+- **`packages/tauri/README.md`**: Tauriデスクトップアプリガイド
 
 ### ✅ 基本チェックリスト
 
 1. **Slackアプリの設定が正しいか**
-2. **環境変数が正しく設定されているか**（`.env`ファイル）
-3. **リダイレクトURLが一致しているか**
-4. **必要なスコープが設定されているか**
-5. **サーバーとクライアントが両方起動しているか**
+2. **Lambda環境変数が正しく設定されているか**（`packages/lambda/env.json`）
+3. **Web環境変数が正しく設定されているか**（`packages/web/.env`）
+4. **リダイレクトURLが一致しているか**（`/api/auth/slack/callback`）
+5. **必要なスコープが設定されているか**
+6. **AWS SAM CLIがインストールされているか**
 
 ### 🔍 デバッグ方法
 
 ```bash
 # ヘルスチェック
-curl http://localhost:3000/health
+curl http://localhost:3000/api/health
 
-# サーバーログ確認（Docker）
-npm run docker:server:logs
+# SAMローカルテスト
+npm run sam:local:test
 
-# 個別起動でエラー確認
-npm run dev:server  # 別ターミナルで
-npm run dev:client  # 別ターミナルで
+# デバッグモードでSAM起動
+npm run sam:dev:debug
+
+# 個別パッケージのデバッグ
+cd packages/lambda && npm run lint
+cd packages/web && npm run dev
 ```
 
 ### 🌐 外部リソース
 
 - [Slack API Documentation](https://api.slack.com/authentication/oauth-v2)
-- [Express.js Documentation](https://expressjs.com/)
+- [AWS Lambda Documentation](https://docs.aws.amazon.com/lambda/)
+- [AWS SAM Documentation](https://docs.aws.amazon.com/serverless-application-model/)
+- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
 - [React Documentation](https://react.dev/)
 - [Vite Documentation](https://vitejs.dev/)
+- [Tauri Documentation](https://tauri.app/)

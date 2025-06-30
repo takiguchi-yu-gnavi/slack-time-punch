@@ -5,6 +5,7 @@ import { config } from '../config';
 interface PostMessageApiResponse {
   success?: boolean;
   error?: string;
+  message?: string;
 }
 
 interface UseTimePunchReturn {
@@ -13,7 +14,8 @@ interface UseTimePunchReturn {
 
 export const useTimePunch = (
   setLoading: (loading: boolean) => void,
-  setError: (error: string | null) => void
+  setError: (error: string | null) => void,
+  onSuccess?: (message: string) => void
 ): UseTimePunchReturn => {
   const timePunch = useCallback(
     async (type: 'in' | 'out', userToken: string, channelId: string) => {
@@ -42,7 +44,13 @@ export const useTimePunch = (
 
         if (response.ok) {
           setLoading(false);
-          console.log(`${type === 'in' ? '出勤' : '退勤'}打刻が完了しました`);
+          const successMessage = `${type === 'in' ? '出勤' : '退勤'}打刻が完了しました`;
+          console.log(successMessage);
+
+          // 成功時のトースト表示
+          if (onSuccess) {
+            onSuccess(successMessage);
+          }
         } else {
           const errorData = (await response.json()) as PostMessageApiResponse;
           throw new Error(errorData.error ?? 'メッセージの投稿に失敗しました');
@@ -52,7 +60,7 @@ export const useTimePunch = (
         setError(error instanceof Error ? error.message : 'メッセージの投稿に失敗しました');
       }
     },
-    [setLoading, setError]
+    [setLoading, setError, onSuccess]
   );
 
   return { timePunch };

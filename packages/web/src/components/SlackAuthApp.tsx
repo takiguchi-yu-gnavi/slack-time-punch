@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useCurrentTime } from '../hooks/useCurrentTime';
 import { useSlackAuth } from '../hooks/useSlackAuth';
@@ -8,6 +8,7 @@ import styles from '../styles/SlackAuthApp.module.css';
 
 import ChannelSelector from './ChannelSelector';
 import ErrorMessage from './ErrorMessage';
+import SuccessToast from './SuccessToast';
 import TimePunchButtons from './TimePunchButtons';
 
 function SlackAuthApp(): JSX.Element {
@@ -22,7 +23,18 @@ function SlackAuthApp(): JSX.Element {
     clearChannels,
   } = useSlackChannels();
   const { formattedTime } = useCurrentTime();
-  const { timePunch } = useTimePunch(setAuthLoading, setAuthError);
+
+  // 成功メッセージ用の状態
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [showSuccessToast, setShowSuccessToast] = useState<boolean>(false);
+
+  // 成功時のコールバック関数
+  const handleSuccess = (message: string): void => {
+    setSuccessMessage(message);
+    setShowSuccessToast(true);
+  };
+
+  const { timePunch } = useTimePunch(setAuthLoading, setAuthError, handleSuccess);
 
   // 認証状態が変わった時にチャンネルを取得
   useEffect(() => {
@@ -118,6 +130,13 @@ function SlackAuthApp(): JSX.Element {
       <div className={styles.footer}>
         <p>© 2025 Slack 出退勤打刻アプリ</p>
       </div>
+
+      {/* 成功トースト */}
+      <SuccessToast
+        message={successMessage}
+        isVisible={showSuccessToast}
+        onDismiss={() => setShowSuccessToast(false)}
+      />
     </div>
   );
 }

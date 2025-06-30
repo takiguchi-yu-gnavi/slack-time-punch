@@ -56,7 +56,7 @@ const fn = (...): ReturnType => { … }
 ├── packages
 │   ├── lambda   # AWS Lambda (TypeScript)
 │   ├── cdk      # AWS CDK (TypeScript + WAF + CloudFront + API Gateway + Lambda)
-│   ├── tauri    # Tauri アプリ (React + CSS Modules + TypeScript + Rust)
+│   ├── tauri    # Tauri アプリ (React + CSS Modules + TypeScript + Rust) ※ 対応は MacOS のみ
 │   └── shared   # 共通の型定義・ユーティリティ
 ├── tsconfig.base.json # ルートの TypeScript 設定
 ├── package.json

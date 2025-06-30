@@ -1,8 +1,6 @@
-import { fetch } from '@tauri-apps/plugin-http';
-
 /**
  * Tauri環境用のHTTPクライアント
- * Tauri HTTP プラグインを使用してCORSを回避
+ * 標準fetchを使用
  */
 export const httpClient = {
   /**
@@ -27,7 +25,10 @@ export const httpClient = {
       return (await response.json()) as T;
     } catch (error) {
       console.error('HTTP GET error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`HTTP GET リクエストが失敗しました: ${String(error)}`);
     }
   },
 
@@ -61,7 +62,10 @@ export const httpClient = {
       return (await response.json()) as T;
     } catch (error) {
       console.error('HTTP POST error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`HTTP POST リクエストが失敗しました: ${String(error)}`);
     }
   },
 };

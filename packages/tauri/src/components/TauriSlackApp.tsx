@@ -37,9 +37,13 @@ const TauriSlackApp = (): JSX.Element => {
     }
   }, [authState.isAuthenticated, tokenInfo?.userToken, channels.length, fetchChannels]);
 
-  const handleLogout = (): void => {
+  const handleLogin = async (): Promise<void> => {
+    await login();
+  };
+
+  const handleLogout = async (): Promise<void> => {
     clearChannels();
-    logout();
+    await logout();
   };
 
   const handleTimePunch = async (type: 'in' | 'out'): Promise<void> => {
@@ -77,8 +81,12 @@ const TauriSlackApp = (): JSX.Element => {
           {authState.error && <ErrorMessage error={authState.error} onDismiss={() => setAuthError(null)} />}
 
           <div className={styles.buttonContainer}>
-            <button onClick={login} disabled={authState.isLoading} className={styles.slackButton}>
-              {authState.isLoading ? (
+            <button
+              onClick={() => void handleLogin()}
+              disabled={authState.isAuthenticating}
+              className={styles.slackButton}
+            >
+              {authState.isAuthenticating ? (
                 <>
                   <span className={styles.spinner} />
                   認証中...
@@ -152,13 +160,13 @@ const TauriSlackApp = (): JSX.Element => {
           )}
 
           <TimePunchButtons
-            isLoading={authState.isLoading}
+            isLoading={authState.isAuthenticating}
             isDisabled={!selectedChannel}
             onTimePunch={(type: 'in' | 'out') => void handleTimePunch(type)}
           />
 
           <div className={styles.logoutContainer}>
-            <button onClick={handleLogout} className={styles.logoutButton}>
+            <button onClick={() => void handleLogout()} className={styles.logoutButton}>
               ログアウト
             </button>
           </div>

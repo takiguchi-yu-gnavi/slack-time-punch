@@ -19,7 +19,7 @@ export class Lambda extends Construct {
     super(scope, id);
 
     // Load environment variables from env.json
-    const envPath = path.join(__dirname, '../../../lambda/env.json');
+    const envPath = path.join(__dirname, '../../../lambda/env.production.json');
     const envConfig = JSON.parse(fs.readFileSync(envPath, 'utf8')) as EnvConfig;
     const lambdaEnvVars = envConfig.SlackTimePunchFunction;
 

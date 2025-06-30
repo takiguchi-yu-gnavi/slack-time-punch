@@ -50,6 +50,7 @@
     "staticlib",
     "takiguchi",
     "tauri",
+    "unlisten",
     "VITE"
   ],
 }

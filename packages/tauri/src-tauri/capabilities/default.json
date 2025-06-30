@@ -5,10 +5,11 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default",
+    "store:default",
+    "deep-link:default",
     {
-      "identifier": "http:default",
-      "allow": [{ "url": "https://d1c85j4qev1prk.cloudfront.net/**" }, { "url": "https://slack.com/**" }]
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://**" }, { "url": "http://**" }]
     }
   ]
 }

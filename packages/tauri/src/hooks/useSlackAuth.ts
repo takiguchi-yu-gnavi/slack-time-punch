@@ -2,6 +2,8 @@ import type { SlackUserProfile, UserInfoApiResponse } from '@slack-time-punch/sh
 import { useCallback, useEffect, useState } from 'react';
 
 import { config } from '../config';
+import { slackAuthService } from '../services/slackAuth';
+import type { AuthState, SlackAuthToken } from '../types/auth';
 import { httpClient } from '../utils/httpClient';
 
 // Tauri用の認証トークン情報
@@ -12,18 +14,12 @@ export interface AuthTokenInfo {
   userId: string;
 }
 
-interface AuthState {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
-
 interface UseSlackAuthReturn {
   authState: AuthState;
   tokenInfo: AuthTokenInfo | null;
   userProfile: SlackUserProfile | null;
-  login: () => void;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   setAuthError: (error: string | null) => void;
   setAuthLoading: (loading: boolean) => void;
 }
@@ -31,28 +27,94 @@ interface UseSlackAuthReturn {
 export const useSlackAuth = (): UseSlackAuthReturn => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
-    isLoading: false,
+    isAuthenticating: false,
+    token: null,
     error: null,
   });
   const [tokenInfo, setTokenInfo] = useState<AuthTokenInfo | null>(null);
   const [userProfile, setUserProfile] = useState<SlackUserProfile | null>(null);
 
-  // 認証状態をチェック
-  const checkAuthState = useCallback((): void => {
-    console.log('認証状態チェック開始...');
-
-    const storedTokenInfo = localStorage.getItem('slackTokenInfo');
-    if (storedTokenInfo) {
+  /**
+   * 初期化時に保存されたトークンをチェック
+   */
+  useEffect(() => {
+    const checkStoredToken = async (): Promise<void> => {
       try {
-        const parsedTokenInfo = JSON.parse(storedTokenInfo) as AuthTokenInfo;
-        setTokenInfo(parsedTokenInfo);
-        setAuthState((prev) => ({ ...prev, isAuthenticated: true }));
-        console.log('認証状態を復元しました');
+        const token = await slackAuthService.getToken();
+        if (token && slackAuthService.isTokenValid(token)) {
+          setAuthState({
+            isAuthenticated: true,
+            isAuthenticating: false,
+            token,
+            error: null,
+          });
+
+          // TokenInfoを更新
+          const tokenInfo: AuthTokenInfo = {
+            userToken: token.access_token,
+            botToken: token.access_token, // TODO: botトークンが別途必要な場合は調整
+            teamId: token.team_id,
+            userId: token.user_id,
+          };
+          setTokenInfo(tokenInfo);
+        }
       } catch (error) {
-        console.error('トークン情報の解析に失敗:', error);
-        localStorage.removeItem('slackTokenInfo');
+        console.error('保存されたトークンの確認エラー:', error);
       }
-    }
+    };
+
+    void checkStoredToken();
+  }, []);
+
+  /**
+   * Deep Linkイベントリスナーをセットアップ
+   */
+  useEffect(() => {
+    const setupListener = async (): Promise<() => void> => {
+      try {
+        const unlisten = await slackAuthService.setupDeepLinkListener(
+          (success: boolean, token?: SlackAuthToken, error?: string) => {
+            if (success && token) {
+              setAuthState({
+                isAuthenticated: true,
+                isAuthenticating: false,
+                token,
+                error: null,
+              });
+
+              // TokenInfoを更新
+              const tokenInfo: AuthTokenInfo = {
+                userToken: token.access_token,
+                botToken: token.access_token, // TODO: botトークンが別途必要な場合は調整
+                teamId: token.team_id,
+                userId: token.user_id,
+              };
+              setTokenInfo(tokenInfo);
+            } else {
+              setAuthState({
+                isAuthenticated: false,
+                isAuthenticating: false,
+                token: null,
+                error: error ?? '認証に失敗しました',
+              });
+            }
+          }
+        );
+
+        return unlisten;
+      } catch (error) {
+        console.error('Deep Linkリスナーのセットアップエラー:', error);
+        return (): void => {
+          // 空の関数を返す（リスナーが設定されていない場合）
+        };
+      }
+    };
+
+    const unlistenPromise = setupListener();
+
+    return (): void => {
+      void unlistenPromise.then((unlisten) => unlisten());
+    };
   }, []);
 
   // ユーザー情報を取得
@@ -74,11 +136,6 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     }
   }, []);
 
-  // 初期化
-  useEffect(() => {
-    checkAuthState();
-  }, [checkAuthState]);
-
   // トークン情報が更新された時にユーザー情報を取得
   useEffect(() => {
     if (tokenInfo?.userToken && !userProfile) {
@@ -86,40 +143,58 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     }
   }, [tokenInfo, userProfile, fetchUserProfile]);
 
-  const login = useCallback((): void => {
-    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
+  /**
+   * 認証を開始する
+   */
+  const login = useCallback(async (): Promise<void> => {
+    try {
+      setAuthState((prev) => ({
+        ...prev,
+        isAuthenticating: true,
+        error: null,
+      }));
 
-    // 現在は簡単化のため、手動でのテスト認証を提供
-    // 実際の実装では、Tauriのディープリンクやローカルサーバーを使用
-    const authUrl = `${config.SERVER_URL}/auth/slack`;
-    console.log('認証URL:', authUrl);
+      await slackAuthService.startAuth();
 
-    // テスト用のダミートークン（実際の実装では削除）
-    setTimeout(() => {
-      const dummyTokenInfo: AuthTokenInfo = {
-        userToken: 'test-user-token',
-        botToken: 'test-bot-token',
-        teamId: 'test-team-id',
-        userId: 'test-user-id',
-      };
-
-      localStorage.setItem('slackTokenInfo', JSON.stringify(dummyTokenInfo));
-      setTokenInfo(dummyTokenInfo);
-      setAuthState((prev) => ({ ...prev, isAuthenticated: true, isLoading: false }));
-      console.log('テスト認証完了');
-    }, 1000);
+      // 認証URLが開かれた後、ユーザーがブラウザで認証を完了するまで待機
+      // 実際の状態更新はDeep Linkコールバックで行われる
+    } catch (error) {
+      console.error('認証開始エラー:', error);
+      setAuthState({
+        isAuthenticated: false,
+        isAuthenticating: false,
+        token: null,
+        error: error instanceof Error ? error.message : '認証の開始に失敗しました',
+      });
+    }
   }, []);
 
-  const logout = useCallback((): void => {
-    localStorage.removeItem('slackTokenInfo');
-    setTokenInfo(null);
-    setUserProfile(null);
-    setAuthState({
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-    });
-    console.log('ログアウトしました');
+  /**
+   * ログアウトする
+   */
+  const logout = useCallback(async (): Promise<void> => {
+    try {
+      await slackAuthService.clearToken();
+      setAuthState({
+        isAuthenticated: false,
+        isAuthenticating: false,
+        token: null,
+        error: null,
+      });
+      setTokenInfo(null);
+      setUserProfile(null);
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      // ログアウトエラーは状態をリセットするが、エラーは設定しない
+      setAuthState({
+        isAuthenticated: false,
+        isAuthenticating: false,
+        token: null,
+        error: null,
+      });
+      setTokenInfo(null);
+      setUserProfile(null);
+    }
   }, []);
 
   const setAuthError = useCallback((error: string | null): void => {
@@ -127,7 +202,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
   }, []);
 
   const setAuthLoading = useCallback((loading: boolean): void => {
-    setAuthState((prev) => ({ ...prev, isLoading: loading }));
+    setAuthState((prev) => ({ ...prev, isAuthenticating: loading }));
   }, []);
 
   return {

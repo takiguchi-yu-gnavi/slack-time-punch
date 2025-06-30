@@ -39,10 +39,15 @@
   "cSpell.words": [
     "addgroup",
     "adduser",
+    "cdylib",
     "devcmn",
     "esbuild",
     "healthcheck",
     "icns",
+    "reqwest",
+    "rlib",
+    "serde",
+    "staticlib",
     "takiguchi",
     "tauri",
     "VITE"

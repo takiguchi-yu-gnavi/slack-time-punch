@@ -112,8 +112,7 @@ export const authHandler = {
       });
 
       // 成功時、トークン情報をURLパラメータとして安全に渡す
-      const redirectUrl =
-        process.env.NODE_ENV === 'production' ? '/' : (process.env.CLIENT_URL ?? 'http://localhost:5173');
+      const redirectUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
 
       // トークン情報をBase64エンコードして安全に渡す
       const tokenData = {

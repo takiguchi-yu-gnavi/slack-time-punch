@@ -38,6 +38,7 @@
     "addgroup",
     "adduser",
     "cdylib",
+    "cooldown",
     "devcmn",
     "esbuild",
     "gnavi",

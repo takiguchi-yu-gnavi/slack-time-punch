@@ -7,23 +7,24 @@
     "packages/*"
   ],
   "scripts": {
-    "shared:build": "npm run build --workspace=packages/shared",
-    "web:dev": "npm run dev --workspace=packages/web",
-    "web:build": "npm run build --workspace=packages/web",
-    "sam:clean": "npm run sam:clean --workspace=packages/lambda",
-    "sam:dev": "npm run sam:dev --workspace=packages/lambda",
-    "sam:dev:debug": "npm run sam:dev:debug --workspace=packages/lambda",
-    "sam:local:test": "npm run sam:local:test --workspace=packages/lambda",
     "cdk:build": "npm run build --workspace=packages/cdk",
-    "cdk:synth": "npm run synth --workspace=packages/cdk",
     "cdk:deploy": "npm run deploy --workspace=packages/cdk",
     "cdk:destroy": "npm run destroy --workspace=packages/cdk",
     "cdk:diff": "npm run diff --workspace=packages/cdk",
-    "lint": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\"",
-    "lint:fix": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
-    "format": "prettier --write \"packages/**/src/**/*.{ts,tsx,js,jsx,json,css}\" \"packages/**/package.json\"",
+    "cdk:synth": "npm run synth --workspace=packages/cdk",
     "format:check": "prettier --check \"packages/**/src/**/*.{ts,tsx,js,jsx,json,css}\" \"packages/**/package.json\"",
-    "postinstall": "simple-git-hooks"
+    "format": "prettier --write \"packages/**/src/**/*.{ts,tsx,js,jsx,json,css}\" \"packages/**/package.json\"",
+    "lint:fix": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "lint": "eslint \"packages/*/src/**/*.{ts,tsx,js,jsx}\"",
+    "postinstall": "simple-git-hooks",
+    "sam:clean": "npm run sam:clean --workspace=packages/lambda",
+    "sam:dev:debug": "npm run sam:dev:debug --workspace=packages/lambda",
+    "sam:dev": "npm run sam:dev --workspace=packages/lambda",
+    "sam:local:test": "npm run sam:local:test --workspace=packages/lambda",
+    "shared:build": "npm run build --workspace=packages/shared",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "web:build": "npm run build --workspace=packages/web",
+    "web:dev": "npm run dev --workspace=packages/web"
   },
   "keywords": [
     "Monorepo"
@@ -31,19 +32,19 @@
   "author": "",
   "license": "ISC",
   "simple-git-hooks": {
-    "pre-commit": "npm run lint && npm run format:check"
+    "pre-commit": "npm run type-check && npm run lint && npm run format:check"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
-    "concurrently": "^8.2.0",
+    "concurrently": "^9.2.1",
     "eslint": "^9.15.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
     "eslint-plugin-react": "^7.37.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "prettier": "^3.3.0",
     "simple-git-hooks": "^2.13.0",
     "typescript": "^5.6.0",

@@ -92,9 +92,11 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
 
   // 初期化とURLパラメータチェック
   useEffect(() => {
-    // 初回チェック
+    // 初回チェック: マイクロタスクで実行して副作用中の同期的な setState 呼び出しを避ける
     console.log('🔍 ローカルストレージ動作テスト:', testLocalStorage());
-    checkAuthState();
+    queueMicrotask(() => {
+      checkAuthState();
+    });
 
     // URLパラメータで認証成功を検知
     const urlParams = new URLSearchParams(window.location.search);
@@ -104,36 +106,39 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
       // トークン情報をURLパラメータから取得
       const tokenParam = urlParams.get('token');
       if (tokenParam) {
-        try {
-          console.log('🔓 URLパラメータからトークン情報をデコード中...');
+        // トークン処理と状態更新はマイクロタスクで実行し、Effect内での同期的な setState を回避
+        queueMicrotask(() => {
+          try {
+            console.log('🔓 URLパラメータからトークン情報をデコード中...');
 
-          // Base64urlデコード
-          const decodedString = atob(tokenParam.replace(/-/g, '+').replace(/_/g, '/'));
-          const tokenData = JSON.parse(decodedString) as AuthTokenInfo;
+            // Base64urlデコード
+            const decodedString = atob(tokenParam.replace(/-/g, '+').replace(/_/g, '/'));
+            const tokenData = JSON.parse(decodedString) as AuthTokenInfo;
 
-          console.log('✅ トークン情報のデコード成功:', {
-            hasUserToken: !!tokenData.userToken,
-            hasBotToken: !!tokenData.botToken,
-            userTokenLength: tokenData.userToken?.length || 0,
-            teamId: tokenData.teamId,
-            userId: tokenData.userId,
-          });
+            console.log('✅ トークン情報のデコード成功:', {
+              hasUserToken: !!tokenData.userToken,
+              hasBotToken: !!tokenData.botToken,
+              userTokenLength: tokenData.userToken?.length || 0,
+              teamId: tokenData.teamId,
+              userId: tokenData.userId,
+            });
 
-          // ローカルストレージに保存
-          localStorage.setItem('slackTokenInfo', JSON.stringify(tokenData));
-          console.log('💾 ローカルストレージに認証情報を保存しました');
+            // ローカルストレージに保存
+            localStorage.setItem('slackTokenInfo', JSON.stringify(tokenData));
+            console.log('💾 ローカルストレージに認証情報を保存しました');
 
-          // 状態を更新
-          setTokenInfo(tokenData);
-          setAuthState((prev) => ({ ...prev, isAuthenticated: true }));
-          console.log('🔄 認証状態を更新しました');
-        } catch (error) {
-          console.error('❌ トークン情報のデコードに失敗:', error);
-          setAuthState((prev) => ({
-            ...prev,
-            error: '認証情報の処理に失敗しました',
-          }));
-        }
+            // 状態を更新
+            setTokenInfo(tokenData);
+            setAuthState((prev) => ({ ...prev, isAuthenticated: true }));
+            console.log('🔄 認証状態を更新しました');
+          } catch (error) {
+            console.error('❌ トークン情報のデコードに失敗:', error);
+            setAuthState((prev) => ({
+              ...prev,
+              error: '認証情報の処理に失敗しました',
+            }));
+          }
+        });
       } else {
         console.log('⚠️ 認証成功パラメータはありますが、トークン情報がありません');
       }
@@ -151,7 +156,7 @@ export const useSlackAuth = (): UseSlackAuthReturn => {
     // ウィンドウにフォーカスが戻った時にも再チェック（認証後のリダイレクト対応）
     const handleFocus = (): void => {
       console.log('ウィンドウにフォーカスが戻りました。認証状態を再チェックします。');
-      checkAuthState();
+      queueMicrotask(() => checkAuthState());
     };
 
     window.addEventListener('focus', handleFocus);

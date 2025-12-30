@@ -4,21 +4,22 @@
   "description": "AWS CDK infrastructure for Slack Time Punch App",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "bootstrap": "cdk bootstrap",
     "build:web": "cd ../web && npm run build",
-    "predeploy": "npm run build:web && npm run build",
-    "watch": "tsc -w",
-    "clean": "rm -rf dist",
+    "build": "tsc",
     "cdk": "cdk",
+    "clean": "rm -rf dist",
     "deploy": "cdk deploy",
     "destroy": "cdk destroy",
     "diff": "cdk diff",
-    "synth": "cdk synth",
-    "bootstrap": "cdk bootstrap",
-    "lint": "eslint src --max-warnings 0",
-    "lint:fix": "eslint src --fix",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\"",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,json}\""
+    "lint:fix": "eslint src --fix",
+    "lint": "eslint src --max-warnings 0",
+    "predeploy": "npm run build:web && npm run build",
+    "synth": "cdk synth",
+    "type-check": "tsc --noEmit",
+    "watch": "tsc -w"
   },
   "keywords": [
     "aws",
@@ -33,12 +34,12 @@
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.140.0",
-    "constructs": "^10.3.0"
+    "aws-cdk-lib": "^2.233.0",
+    "constructs": "^10.4.4"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "aws-cdk": "^2.140.0",
-    "typescript": "^5.3.0"
+    "@types/node": "^24.10.4",
+    "aws-cdk": "^2.1100.1",
+    "typescript": "^5.9.3"
   }
 }

@@ -118,41 +118,6 @@ npm run cdk:destroy
 
 ---
 
-## 環境変数（主要項目）
-
-以下は開発／本番で確認すべき主要な環境変数の例です。各パッケージのサンプルファイルを必ず参照してください。
-
-- Lambda（packages/lambda/env.example.json）:
-  - `SLACK_CLIENT_ID` : Slack アプリの Client ID
-    - 取得元: Slack App 管理画面 → Basic Information → Client ID
-    - 開発例: `ABC123456.789012345`（実際の値は Slack から発行されます）
-  - `SLACK_CLIENT_SECRET` : Slack アプリの Client Secret
-    - 取得元: Slack App 管理画面 → Basic Information → Client Secret
-    - 取扱い: 絶対にリポジトリにコミットしない。Secrets Manager 等で管理
-  - `CLIENT_URL` : フロントエンドの公開 URL（OAuth の Redirect 用に使用）
-    - 取得元 / 設定方法: ローカル (Vite) は `http://localhost:5173`、本番は CDK の CloudFront ドメインを使用
-    - 開発例: `http://localhost:5173`
-    - 本番例: `https://d1234abcd.cloudfront.net`
-  - `REDIRECT_URI` : OAuth のコールバック URL
-    - 設定方法: `CLIENT_URL` にパスを付与（`/api/auth/slack/callback` など）
-    - 開発例: `http://localhost:5173/api/auth/slack/callback`（ローカルでリダイレクトを受ける場合）
-    - 本番例: `https://d1234abcd.cloudfront.net/api/auth/slack/callback`
-  - `SLACK_SCOPES`, `SLACK_USER_SCOPES` : OAuth に要求するスコープ
-    - 取得元: Slack アプリ設定 → OAuth & Permissions で追加するスコープ
-    - 例: `channels:read,groups:read` / `identify,channels:read,groups:read,chat:write`
-  - `NODE_ENV` : 実行環境モード
-    - 値: `development` / `production`
-
-- Web（packages/web/.env.example）:
-  - `VITE_SERVER_URL` : フロントが参照するアプリ本体の URL
-    - 開発例: `http://localhost:5173`
-    - 本番例: `https://d1234abcd.cloudfront.net`
-  - `VITE_LAMBDA_AUTH_URL` : Lambda / API Gateway のベース URL（クライアントが API にリクエストする先）
-    - 開発例: `http://localhost:3000/api`
-    - 本番例: `https://api.example.com/api`（API Gateway または CloudFront 経由の URL）
-
-注: シークレットは `.gitignore` とシークレット管理サービスを活用してください。
-
 ## テスト実行方法
 
 - 型チェック（ルート）:

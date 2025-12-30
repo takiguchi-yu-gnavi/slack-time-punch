@@ -39,7 +39,7 @@ export class Lambda extends Construct {
 
     // Create Lambda function
     this.lambdaFunction = new nodejs.NodejsFunction(this, 'SlackTimePunchFunction', {
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: 'handler',
       entry: path.join(__dirname, '../../../lambda/src/index.ts'),
       functionName: 'slack-time-punch-function',

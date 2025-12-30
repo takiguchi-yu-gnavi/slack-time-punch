@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   slack-time-punch-lambda
@@ -16,7 +16,7 @@ Parameters:
 Globals:
   Function:
     Timeout: 30
-    Runtime: nodejs22.x
+    Runtime: nodejs24.x
     MemorySize: 128
     # 環境変数は外部のenv.jsonから注入されます
   Api:
@@ -35,7 +35,7 @@ Resources:
       CodeUri: ./
       Handler: dist/index.handler
       Architectures:
-        - x86_64
+        - arm64
       Environment:
         Variables:
           # 環境変数のキーを定義（値は env.json から --env-vars オプションで注入されます）
@@ -61,14 +61,12 @@ Resources:
           Properties:
             Path: /
             Method: ANY
-    Metadata:
-      BuildMethod: nodejs22.x
 
   # CloudWatch Logs
   SlackTimePunchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: '/aws/lambda/slack-time-punch-local'
+      LogGroupName: "/aws/lambda/slack-time-punch-local"
       RetentionInDays: 7
 
 Outputs:

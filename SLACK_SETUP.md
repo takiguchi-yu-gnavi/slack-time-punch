@@ -206,7 +206,3 @@ REDIRECT_URI=https://yourdomain.com/auth/slack/callback
 - [Slack API Documentation](https://api.slack.com/authentication/oauth-v2)
 - [Slack Developer Community](https://slackcommunity.com/)
 - [Slack API Troubleshooting](https://api.slack.com/authentication/oauth-v2#troubleshooting)
-
-|大項目|中|
-|--|--||
-|テスト|品管|

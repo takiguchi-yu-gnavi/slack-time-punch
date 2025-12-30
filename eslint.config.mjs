@@ -31,9 +31,7 @@ export default tseslint.config(
       '**/*.js.map',
       // AWS Lambda関連
       '**/.aws-sam/**',
-      // Tauri関連
-      '**/src-tauri/target/**',
-      '**/src-tauri/gen/**',
+      // ビルド生成物除外
     ],
   },
 
@@ -79,9 +77,9 @@ export default tseslint.config(
     },
   },
 
-  // React用設定（tauri, webパッケージ）
+  // React用設定（webパッケージ）
   {
-    files: ['packages/tauri/**/*.{ts,tsx}', 'packages/web/**/*.{ts,tsx}'],
+    files: ['packages/web/**/*.{ts,tsx}'],
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,

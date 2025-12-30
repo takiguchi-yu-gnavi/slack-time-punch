@@ -1,7 +1,7 @@
 {
   "name": "slack-time-punch-workspace",
   "version": "1.0.0",
-  "description": "Slack Time Punch App - TypeScript Monorepo with Server/Client separation, Docker support, and Tauri-ready architecture",
+  "description": "Slack Time Punch App - TypeScript Monorepo with Server/Client separation and Docker support",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -10,8 +10,6 @@
     "shared:build": "npm run build --workspace=packages/shared",
     "web:dev": "npm run dev --workspace=packages/web",
     "web:build": "npm run build --workspace=packages/web",
-    "tauri:dev": "npm run tauri:dev --workspace=packages/tauri",
-    "tauri:build": "npm run tauri:build --workspace=packages/tauri",
     "sam:clean": "npm run sam:clean --workspace=packages/lambda",
     "sam:dev": "npm run sam:dev --workspace=packages/lambda",
     "sam:dev:debug": "npm run sam:dev:debug --workspace=packages/lambda",
@@ -50,6 +48,5 @@
     "simple-git-hooks": "^2.13.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.15.0"
-  },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
+  }
 }

@@ -1,6 +1,6 @@
 # Slack 出退勤打刻アプリ
 
-TypeScriptで実装されたSlack連携出退勤打刻システムです。AWS Lambda + CDK構成でサーバーレス化し、将来的なTauriデスクトップアプリ化にも対応しています。
+TypeScriptで実装されたSlack連携出退勤打刻システムです。AWS Lambda + CDK構成でサーバーレス化しています。
 
 ## 🏗️ アーキテクチャ
 
@@ -11,13 +11,11 @@ packages/
 ├── shared/     # 共有型定義・ユーティリティ
 ├── lambda/     # AWS Lambda関数（API Gateway + Lambda）
 ├── cdk/        # AWS CDK構成（CloudFront + WAF + API Gateway + Lambda）
-├── web/        # React.js フロントエンド (Vite)
-└── tauri/      # Tauriデスクトップアプリケーション
+└── web/        # React.js フロントエンド (Vite)
 ```
 
 - **サーバーレス**: AWS Lambda + API Gatewayによる高可用性・低コスト運用
 - **型安全性**: 共有型定義で一貫性を保証
-- **Tauri対応**: クライアントアプリのデスクトップ化準備完了
 - **CDK Infrastructure as Code**: AWS リソースをコードで管理
 - **環境変数管理**: 完全なURLベースの設定で簡素化
 
@@ -136,9 +134,6 @@ npm run sam:dev:debug
 
 # Webクライアントのみ（UI: http://localhost:5173）
 npm run web:dev
-
-# Tauriデスクトップアプリ（デスクトップアプリ）
-npm run tauri:dev
 ```
 
 #### 🏗️ CDKデプロイ
@@ -168,9 +163,6 @@ npm run web:build
 
 # CDKビルド
 npm run cdk:build
-
-# Tauriアプリビルド
-npm run tauri:build
 ```
 
 ## 🚀 クイックスタート
@@ -339,14 +331,7 @@ npm run web:dev
 - **Build Tool**: Vite
 - **Language**: TypeScript
 - **UI**: CSS Modules
-- **Future Ready**: Tauri対応準備完了
-
-### Desktop (Tauri)
-
-- **Framework**: Tauri 2.x
-- **Frontend**: React 18 + CSS Modules
-- **Backend**: Rust
-- **Platform**: macOS（現在対応）
+-- **Future Ready**: 削除済み
 
 ### Shared
 
@@ -391,28 +376,22 @@ npm run web:dev
 │   │   │   └── slack-time-punch-stack.ts # CDKスタック定義
 │   │   ├── cdk.json              # CDK設定
 │   │   └── package.json
-│   ├── web/                       # React.js フロントエンド
-│   │   ├── src/
-│   │   │   ├── main.tsx          # エントリーポイント
-│   │   │   ├── App.tsx           # メインアプリ
-│   │   │   ├── config/
-│   │   │   │   └── index.ts      # 設定管理
-│   │   │   ├── components/       # Reactコンポーネント
-│   │   │   ├── hooks/            # カスタムフック
-│   │   │   └── styles/           # CSS Modules
-│   │   ├── public/
-│   │   ├── vite.config.ts        # Vite設定
-│   │   └── package.json
-│   └── tauri/                     # Tauriデスクトップアプリ
+│   └── web/                       # React.js フロントエンド
+│       ├── src/
+│       │   ├── main.tsx          # エントリーポイント
+│       │   ├── App.tsx           # メインアプリ
+│       │   ├── config/
+│       │   │   └── index.ts      # 設定管理
+│       │   ├── components/       # Reactコンポーネント
+│       │   ├── hooks/            # カスタムフック
+│       │   ├── styles/           # CSS Modules
+│       ├── public/
+│       ├── vite.config.ts        # Vite設定
+│       └── package.json
 │       ├── src/
 │       │   ├── main.tsx          # エントリーポイント
 │       │   ├── App.tsx           # メインアプリ
 │       │   └── components/       # Reactコンポーネント
-│       ├── src-tauri/            # Rustバックエンド
-│       │   ├── src/
-│       │   │   └── main.rs       # Tauriメイン
-│       │   ├── Cargo.toml        # Rust依存関係
-│       │   └── tauri.conf.json   # Tauri設定
 │       ├── public/
 │       └── package.json
 ├── tsconfig.base.json             # ルートTypeScript設定
@@ -444,11 +423,6 @@ npm run web:dev
 
 - `npm run web:dev`: Webクライアント開発モード
 - `npm run web:build`: Webクライアントビルド
-
-#### Tauri関連
-
-- `npm run tauri:dev`: Tauriデスクトップアプリ開発モード
-- `npm run tauri:build`: Tauriデスクトップアプリビルド
 
 #### CDK関連
 
@@ -527,7 +501,6 @@ cd packages/web && npm run format
 - **`SLACK_SETUP.md`**: Slackアプリの詳細な設定手順
 - **`packages/lambda/README.md`**: Lambda関数の詳細ドキュメント
 - **`packages/cdk/README.md`**: CDKデプロイメントガイド
-- **`packages/tauri/README.md`**: Tauriデスクトップアプリガイド
 
 ### ✅ 基本チェックリスト
 
@@ -563,4 +536,3 @@ cd packages/web && npm run dev
 - [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
 - [React Documentation](https://react.dev/)
 - [Vite Documentation](https://vitejs.dev/)
-- [Tauri Documentation](https://tauri.app/)

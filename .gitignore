@@ -105,3 +105,11 @@ slack-credentials.json
 cdk.out/
 cdk.context.json
 *.d.ts
+
+# VSCode settings
+.vscode/mcp.json
+
+# Allow TypeScript declaration files in packages/web/src (these are project-specific shims)
+!packages/web/src/*.d.ts
+!packages/web/src/react-shims.d.ts
+!packages/web/src/global.d.ts
